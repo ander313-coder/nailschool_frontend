@@ -5,6 +5,9 @@
       <div class="logo">
         <router-link to="/" class="logo-link">
           <span class="logo-text">Zlobina Nails School</span>
+          <div class="logo-sub-text">
+          <p>CORPORATE EDUCATION</p>
+          </div>
         </router-link>
       </div>
 
@@ -111,6 +114,15 @@ document.addEventListener('click', closeDropdown)
 .logo-text {
   font-size: 1.2rem;
   font-weight: 700;
+  color: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-sub-text {
+  font-size: 0.8rem;
   color: var(--primary);
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   -webkit-background-clip: text;
