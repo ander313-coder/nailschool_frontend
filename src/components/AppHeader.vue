@@ -47,7 +47,9 @@
           </template>
           <template v-else>
             <router-link to="/login" class="auth-link">Войти</router-link>
-            <router-link to="/register" class="auth-button">Регистрация</router-link>
+            <router-link to="/login" class="auth-link">
+              <img src="../assets/styles/pic/default-avatar.png" alt="avatar" class="avatar-img">
+            </router-link>            
           </template>
         </div>
       </div>
@@ -246,21 +248,9 @@ document.addEventListener('click', closeDropdown)
   color: var(--primary);
 }
 
-.auth-button {
-  background: var(--primary);
-  color: var(--white);
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--border-radius);
-  text-decoration: none;
-  font-weight: 600;
-  transition: var(--transition);
-  border: none;
-  cursor: pointer;
-}
-
-.auth-button:hover {
-  background: var(--primary-dark);
-  transform: translateY(-1px);
+.avatar-img {
+  max-width: 50px;
+  height: auto;
 }
 
 @media (max-width: 768px) {
