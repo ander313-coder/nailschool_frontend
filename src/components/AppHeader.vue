@@ -104,8 +104,12 @@ document.addEventListener('click', closeDropdown)
   text-decoration: none;
 }
 
+.logo {
+  max-width: 200px;
+}
+
 .logo-text {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--primary);
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
@@ -267,6 +271,10 @@ document.addEventListener('click', closeDropdown)
   .auth-button {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
+  }
+
+  .logo-text {
+    font-size: 1rem;
   }
 }
 </style>

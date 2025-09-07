@@ -6,27 +6,23 @@
         <!-- Лого и описание -->
         <div class="footer-brand">
           <div class="footer-logo">
-            <span class="logo-text">ZLOBINA<br>NAILS<br>SCHOOL</span>
+            <img src="../assets/styles/pic/logo-wight.png" alt="Zlobina Nails School" class="logo-image">
           </div>
         </div>
         <!-- Соцсети -->
         <div class="footer-social">
           <div class="social-links">
             <a href="#" class="social-link">
-              <span class="social-icon">📱</span>
-              <span>Instagram</span>
+              <img src="../assets/styles/pic/vk.png" alt="VK" class="social-icon">
             </a>
             <a href="#" class="social-link">
-              <span class="social-icon">💬</span>
-              <span>VK</span>
+              <img src="../assets/styles/pic/tg.png" alt="TG" class="social-icon">
             </a>
             <a href="#" class="social-link">
-              <span class="social-icon">📺</span>
-              <span>YouTube</span>
+              <img src="../assets/styles/pic/wa.png" alt="WA" class="social-icon">
             </a>
             <a href="#" class="social-link">
-              <span class="social-icon">📧</span>
-              <span>Telegram</span>
+              <img src="../assets/styles/pic/ins.png" alt="INS" class="social-icon">
             </a>
           </div>
         </div>
@@ -116,7 +112,7 @@
 
 .social-icon {
   font-size: 1.2rem;
-  width: 24px;
+  width: 48px;
   text-align: center;
 }
 
@@ -185,5 +181,10 @@
   .social-link {
     font-size: 0.9rem;
   }
+}
+
+.logo-image {
+  max-width: 150px;
+  height: auto;
 }
 </style>
