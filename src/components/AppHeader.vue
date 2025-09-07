@@ -1,86 +1,123 @@
 <template>
   <header class="app-header">
     <div class="container">
+      <!-- Левая часть - Логотип -->
       <div class="logo">
-        <router-link to="/">
-          <h1>Zlobina Nails School</h1>
-          <span class="logo-subtitle">Corporate Education</span>
+        <router-link to="/" class="logo-link">
+          <span class="logo-text">Zlobina Nails School</span>
         </router-link>
       </div>
-      <nav class="navigation">
-        <div class="courses-dropdown" @mouseenter="showDropdown = true" @mouseleave="showDropdown = false">
-          <button class="nav-link courses-btn">Мои курсы</button>
-          <div v-if="showDropdown" class="dropdown-menu">
-            <router-link to="/courses/active" class="dropdown-item">Активные</router-link>
-            <router-link to="/courses/completed" class="dropdown-item">Завершенные</router-link>
+
+      <!-- Правая часть - Навигация и Авторизация -->
+      <div class="right-section">
+        <!-- Центральная часть - Навигация -->
+        <nav class="navigation">
+          <router-link to="/" class="nav-link">Главная</router-link>
+          <!-- Выпадающее меню "Мои курсы" -->
+          <div class="dropdown" @mouseenter="isDropdownOpen = true" @mouseleave="isDropdownOpen = false">
+            <button class="dropdown-toggle">
+              Мои курсы
+              <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="dropdown-menu" v-show="isDropdownOpen">
+              <router-link to="/courses/active" class="dropdown-item">
+                Активные
+              </router-link>
+              <router-link to="/courses/completed" class="dropdown-item">
+                Завершенные
+              </router-link>
+            </div>
           </div>
+        </nav>
+
+        <!-- Правая часть - Авторизация -->
+        <div class="auth-section">
+          <template v-if="authStore.isAuthenticated">
+            <div class="user-menu">
+              <button class="user-button">
+                <div class="user-avatar">
+                  <span>{{ getUserInitials }}</span>
+                </div>
+                <span class="user-name">{{ authStore.user?.username }}</span>
+              </button>
+            </div>
+          </template>
+          <template v-else>
+            <router-link to="/login" class="auth-link">Войти</router-link>
+            <router-link to="/register" class="auth-button">Регистрация</router-link>
+          </template>
         </div>
-        <template v-if="authStore.isAuthenticated">
-          <router-link to="/profile" class="user-avatar">
-            <img :src="authStore.user?.avatarUrl || defaultAvatar" alt="avatar" class="avatar-img" />
-          </router-link>
-        </template>
-        <div v-else class="auth-buttons">
-          <router-link to="/login" class="nav-link">Войти</router-link>
-        </div>
-      </nav>
+      </div>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { computed, ref } from 'vue'
 
 const authStore = useAuthStore()
-const showDropdown = ref(false)
+const isDropdownOpen = ref(false)
+
+const getUserInitials = computed(() => {
+  if (!authStore.user?.username) return 'U'
+  return authStore.user.username.charAt(0).toUpperCase()
+})
+
+
+// Закрываем dropdown при клике вне его
+const closeDropdown = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (!target.closest('.dropdown')) {
+    isDropdownOpen.value = false
+  }
+}
+
+// Добавляем обработчик клика по документу
+document.addEventListener('click', closeDropdown)
 </script>
 
 <style scoped>
 .app-header {
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  padding: 0.75rem 0;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  height: 70px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
   z-index: 1000;
-  border-bottom: 1px solid #e5e5e5;
 }
 
 .container {
-  max-width: 1200px;
+  max-width: var(--container-width);
   margin: 0 auto;
   padding: 0 2rem;
+  height: 100%;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
-.logo {
-  display: flex;
-  flex-direction: column;
-}
-
-.logo a {
+.logo-link {
   text-decoration: none;
 }
 
-.logo h1 {
-  color: #2c3e50;
+.logo-text {
   font-size: 1.5rem;
-  font-family: 'Arial', sans-serif;
-  font-weight: 600;
-  margin: 0;
-  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.logo-subtitle {
-  font-size: 0.8rem;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.right-section {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
 }
 
 .navigation {
@@ -90,101 +127,145 @@ const showDropdown = ref(false)
 }
 
 .nav-link {
-  color: #2c3e50;
-  font-size: 0.95rem;
-  font-weight: 500;
+  color: var(--text-secondary);
   text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
 }
 
 .nav-link:hover {
-  background: #f8f9fa;
-  color: #1a73e8;
+  color: var(--primary);
 }
 
-.courses-dropdown {
+.dropdown {
   position: relative;
 }
 
-.courses-btn {
+.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   background: none;
   border: none;
-  font-size: 0.95rem;
+  color: var(--text-secondary);
   font-weight: 500;
+  font-size: 1rem;
   cursor: pointer;
+  padding: 0.5rem 0;
+  transition: var(--transition);
+}
+
+.dropdown-toggle:hover {
+  color: var(--primary);
+}
+
+.dropdown-arrow {
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+
+.dropdown:hover .dropdown-arrow {
+  transform: rotate(180deg);
 }
 
 .dropdown-menu {
   position: absolute;
   top: 100%;
-  left: 0; /* Изменено с right: 0 на left: 0 для выпадения вниз */
-  background: #ffffff;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-  min-width: 200px;
-  margin-top: 0.5rem;
-  border: 1px solid #e5e5e5;
+  left: 0;
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem 0;
+  min-width: 180px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
   z-index: 1000;
+}
+
+.dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .dropdown-item {
   display: block;
-  padding: 0.75rem 1rem;
-  color: #2c3e50;
+  padding: 0.75rem 1.5rem;
+  color: var(--text-secondary);
   text-decoration: none;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
+  font-weight: 500;
+  transition: var(--transition);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 
 .dropdown-item:hover {
-  background: #f8f9fa;
-  color: #1a73e8;
+  background: var(--gray-50);
+  color: var(--primary);
 }
 
-.user-avatar {
-  margin-left: 1rem;
+.auth-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
-.avatar-img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #e5e5e5;
-  transition: border-color 0.2s ease;
+.auth-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition);
 }
 
-.avatar-img:hover {
-  border-color: #1a73e8;
+.auth-link:hover {
+  color: var(--primary);
 }
 
-.auth-buttons .nav-link {
-  color: #1a73e8;
-  border: 1px solid #1a73e8;
+.auth-button {
+  background: var(--primary);
+  color: var(--white);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  font-weight: 600;
+  transition: var(--transition);
+  border: none;
+  cursor: pointer;
 }
 
-.auth-buttons .nav-link:hover {
-  background: #1a73e8;
-  color: #ffffff;
+.auth-button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {
   .container {
     padding: 0 1rem;
   }
-
-  .logo h1 {
-    font-size: 1.2rem;
-  }
-
+  
   .navigation {
+    display: none;
+  }
+  
+  .right-section {
     gap: 1rem;
   }
-
-  .nav-link {
-    padding: 0.4rem 0.8rem;
+  
+  .auth-section {
+    gap: 1rem;
+  }
+  
+  .auth-button {
+    padding: 0.5rem 1rem;
     font-size: 0.9rem;
   }
 }
