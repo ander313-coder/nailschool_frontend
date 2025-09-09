@@ -30,25 +30,25 @@
 
           <form class="login-form" @submit.prevent="handleLogin">
             <div class="form-group">
-              <label for="username" class="form-label">User name</label>
+              <label for="username" class="form-label">Имя</label>
               <input
                 id="username"
                 v-model="formData.username"
                 type="text"
                 class="form-input"
-                placeholder="Enter your User name"
+                placeholder="Введите имя"
                 required
               />
             </div>
 
             <div class="form-group">
-              <label for="password" class="form-label">Password</label>
+              <label for="password" class="form-label">Пароль</label>
               <input
                 id="password"
                 v-model="formData.password"
                 type="password"
                 class="form-input"
-                placeholder="Enter your Password"
+                placeholder="Введите пароль"
                 required
               />
             </div>
@@ -58,8 +58,8 @@
               class="login-button"
               :disabled="isLoading"
             >
-              <span v-if="!isLoading">Login</span>
-              <span v-else class="loading">Logging in...</span>
+              <span v-if="!isLoading">Войти</span>
+              <span v-else class="loading">Вход...</span>
             </button>
 
             <div v-if="errorMessage" class="error-message">
@@ -115,7 +115,7 @@ const handleLogin = async () => {
     if (success) {
       router.push('/')
     } else {
-      errorMessage.value = 'Invalid username or password'
+      errorMessage.value = 'Неверно Имя пользователя или Пароль'
     }
   } catch (error) {
     errorMessage.value = 'Login failed. Please try again.'
@@ -235,20 +235,26 @@ const handleLogin = async () => {
 
 .form-group {
   margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .form-label {
   color: var(--text-secondary);
   font-weight: 500;
   font-size: 0.95rem;
+  padding-left: 0.25rem;
 }
 
 .form-input {
+  width: 100%;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   padding: 0.75rem 1rem;
   font-size: 0.95rem;
   transition: var(--transition);
+  margin-top: 0.25rem;
 }
 
 .form-input:focus {
@@ -257,7 +263,7 @@ const handleLogin = async () => {
 }
 
 .form-input::placeholder {
-  color: var(--gray-400);
+  color: var(--gray-300);
 }
 
 .login-button {
@@ -307,7 +313,7 @@ const handleLogin = async () => {
 .error-message {
   background: rgba(var(--primary), 0.1);
   border: 1px solid var(--border-color);
-  color: var(--text-primary);
+  color: red;
   margin-top: 1rem;
   padding: 0.75rem;
   border-radius: var(--border-radius);

@@ -1,0 +1,452 @@
+<template>
+  <header class="app-header">
+    <div class="container">
+      <!-- Левая часть - Логотип -->
+      <div class="logo">
+        <router-link to="/" class="logo-link">
+          <span class="logo-text">Zlobina Nails School</span>
+          <div class="logo-sub-text">
+          <p>CORPORATE EDUCATION</p>
+          </div>
+        </router-link>
+      </div>
+
+      <!-- Правая часть - Навигация и Авторизация -->
+      <div class="right-section">
+        <!-- Центральная часть - Навигация -->
+        <nav class="navigation">
+          <router-link to="/" class="nav-link">Главная</router-link>
+          <!-- Выпадающее меню "Мои курсы" -->
+          <div class="dropdown" @mouseenter="isDropdownOpen = true" @mouseleave="isDropdownOpen = false">
+            <button class="dropdown-toggle">
+              Мои курсы
+              <span class="dropdown-arrow">▼</span>
+            </button>
+            <div class="dropdown-menu" v-show="isDropdownOpen">
+              <router-link to="/courses/active" class="dropdown-item">
+                Активные
+              </router-link>
+              <router-link to="/courses/completed" class="dropdown-item">
+                Завершенные
+              </router-link>
+            </div>
+          </div>
+        </nav>
+
+        <div class="auth-section">
+          <template v-if="authStore.isAuthenticated && authStore.user">
+            <div class="user-menu">
+              <button class="user-button" @click="toggleUserMenu">
+                <div class="user-avatar">
+                  <span>{{ getUserInitials }}</span>
+                </div>
+                <span class="user-name">{{ authStore.user.username }}</span>
+              </button>
+              
+              <!-- Выпадающее меню пользователя -->
+              <div v-if="isUserMenuOpen" class="user-dropdown-menu">
+                <router-link to="/profile" class="user-dropdown-item">
+                  👤 Мой профиль
+                </router-link>
+                <router-link to="/settings" class="user-dropdown-item">
+                  ⚙️ Настройки
+                </router-link>
+                <button class="user-dropdown-item logout-item" @click="handleLogout">
+                  🚪 Выйти
+                </button>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <router-link to="/login" class="auth-link">Войти</router-link>
+          </template>
+        </div>
+      </div>
+    </div>
+    <template v-if="authStore.isAuthenticated">
+      <div style="margin-right: 1rem;">
+        <button @click="debugUser" style="font-size: 12px; padding: 2px 5px;">
+          Debug
+        </button>
+      </div>
+    </template>
+  </header>
+</template>
+
+<script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+const authStore = useAuthStore()
+const router = useRouter()
+const isDropdownOpen = ref(false)
+const isUserMenuOpen = ref(false)
+
+// Добавим метод для отладки
+const debugUser = () => {
+  console.log('User data:', authStore.user)
+  console.log('Is authenticated:', authStore.isAuthenticated)
+}
+
+// Получаем инициалы пользователя
+const getUserInitials = computed(() => {
+  if (!authStore.user?.username) return 'U'
+  return authStore.user.username.charAt(0).toUpperCase()
+})
+
+// Переключение меню пользователя
+const toggleUserMenu = () => {
+  isUserMenuOpen.value = !isUserMenuOpen.value
+}
+
+// Выход из системы
+const handleLogout = () => {
+  authStore.logout()
+  isUserMenuOpen.value = false
+  router.push('/login')
+}
+
+// Закрываем меню при клике вне его
+const closeMenus = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  
+  if (!target.closest('.dropdown')) {
+    isDropdownOpen.value = false
+  }
+  
+  if (!target.closest('.user-menu')) {
+    isUserMenuOpen.value = false
+  }
+}
+
+// Добавляем обработчик клика по документу
+onMounted(() => {
+  document.addEventListener('click', closeMenus)
+})
+
+// Убираем обработчик при размонтировании
+onUnmounted(() => {
+  document.removeEventListener('click', closeMenus)
+})
+</script>
+
+<style scoped>
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  z-index: 1000;
+}
+
+.container {
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 0 2rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-link {
+  text-decoration: none;
+}
+
+.logo {
+  max-width: 200px;
+}
+
+.logo-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-sub-text {
+  font-size: 0.8rem;
+  color: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.right-section {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.nav-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.nav-link:hover {
+  color: var(--primary);
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  transition: var(--transition);
+}
+
+.dropdown-toggle:hover {
+  color: var(--primary);
+}
+
+.dropdown-arrow {
+  font-size: 0.8rem;
+  transition: var(--transition);
+}
+
+.dropdown:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem 0;
+  min-width: 180px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: block;
+  padding: 0.75rem 1.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: var(--gray-50);
+  color: var(--primary);
+}
+
+.auth-section {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.auth-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.auth-link:hover {
+  color: var(--primary);
+}
+
+.avatar-img {
+  max-width: 50px;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .navigation {
+    display: none;
+  }
+  
+  .right-section {
+    gap: 1rem;
+  }
+  
+  .auth-section {
+    gap: 1rem;
+  }
+  
+  .auth-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .logo-text {
+    font-size: 1rem;
+  }
+}
+/* Меню пользователя */
+.user-menu {
+  position: relative;
+}
+
+.user-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-weight: 600;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.user-name {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.user-menu-arrow {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  transition: var(--transition);
+}
+
+.user-menu:hover .user-menu-arrow {
+  transform: rotate(180deg);
+}
+
+/* Выпадающее меню пользователя */
+.user-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem 0;
+  min-width: 200px;
+  z-index: 1000;
+  margin-top: 0.5rem;
+}
+
+.user-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.user-dropdown-item:hover {
+  background: var(--gray-50);
+  color: var(--primary);
+}
+
+.logout-item {
+  color: #dc2626;
+}
+
+.logout-item:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+/* Адаптивность */
+@media (max-width: 968px) {
+  .user-name {
+    display: none;
+  }
+  
+  .user-button {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-dropdown-menu {
+    right: -1rem;
+    min-width: 180px;
+  }
+  
+  .user-dropdown-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+</style>

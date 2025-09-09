@@ -5,81 +5,61 @@
       <div class="logo">
         <router-link to="/" class="logo-link">
           <span class="logo-text">Zlobina Nails School</span>
-          <div class="logo-sub-text">
-          <p>CORPORATE EDUCATION</p>
-          </div>
         </router-link>
       </div>
 
-      <!-- Правая часть - Навигация и Авторизация -->
-      <div class="right-section">
-        <!-- Центральная часть - Навигация -->
-        <nav class="navigation">
-          <router-link to="/" class="nav-link">Главная</router-link>
-          <!-- Выпадающее меню "Мои курсы" -->
-          <div class="dropdown" @mouseenter="isDropdownOpen = true" @mouseleave="isDropdownOpen = false">
-            <button class="dropdown-toggle">
-              Мои курсы
-              <span class="dropdown-arrow">▼</span>
-            </button>
-            <div class="dropdown-menu" v-show="isDropdownOpen">
-              <router-link to="/courses/active" class="dropdown-item">
-                Активные
-              </router-link>
-              <router-link to="/courses/completed" class="dropdown-item">
-                Завершенные
-              </router-link>
-            </div>
-          </div>
-        </nav>
-
-        <!-- Правая часть - Авторизация -->
-        <div class="auth-section">
-          <template v-if="authStore.isAuthenticated">
-            <div class="user-menu">
-              <button class="user-button">
-                <div class="user-avatar">
-                  <span>{{ getUserInitials }}</span>
-                </div>
-                <span class="user-name">{{ authStore.user?.username }}</span>
-              </button>
-            </div>
-          </template>
-          <template v-else>
-            <router-link to="/login" class="auth-link">Войти</router-link>
-            <router-link to="/login" class="auth-link">
-              <img src="../assets/styles/pic/default-avatar.png" alt="avatar" class="avatar-img">
-            </router-link>            
-          </template>
+      <!-- Простая отладочная информация -->
+      <div class="auth-info">
+        <div v-if="authStore.isAuthenticated" class="user-badge">
+          <span>👤 {{ authStore.user?.username || 'Пользователь' }}</span>
+          <button @click="handleLogout" class="logout-btn-small">Выйти</button>
+        </div>
+        <div v-else class="auth-buttons">
+          <router-link to="/login" class="auth-link">Войти</router-link>
+          <router-link to="/register" class="auth-button">Регистрация</router-link>
         </div>
       </div>
+
+      <!-- Большая заметная кнопка отладки -->
+      <button @click="showDebugInfo" class="big-debug-button">
+        🔍 ПОКАЗАТЬ ИНФОРМАЦИЮ ДЛЯ РАЗРАБОТЧИКА
+      </button>
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
-import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
-const isDropdownOpen = ref(false)
+const router = useRouter()
 
-const getUserInitials = computed(() => {
-  if (!authStore.user?.username) return 'U'
-  return authStore.user.username.charAt(0).toUpperCase()
-})
+const showDebugInfo = () => {
+  // Простой alert с информацией
+  const token = localStorage.getItem('access_token')
+  const userInfo = authStore.user ? JSON.stringify(authStore.user) : 'Нет данных'
+  
+  alert(`🐛 ИНФОРМАЦИЯ ДЛЯ РАЗРАБОТЧИКА:
+  
+Статус авторизации: ${authStore.isAuthenticated ? 'ВОЙДЕН' : 'НЕ ВОЙДЕН'}
+Данные пользователя: ${userInfo}
+Токен в localStorage: ${token ? 'ЕСТЬ' : 'НЕТ'}
 
+Нажмите F12 → Console чтобы увидеть подробности`)
 
-// Закрываем dropdown при клике вне его
-const closeDropdown = (event: MouseEvent) => {
-  const target = event.target as HTMLElement
-  if (!target.closest('.dropdown')) {
-    isDropdownOpen.value = false
-  }
+  // Также выводим в консоль
+  console.log('=== ИНФОРМАЦИЯ ДЛЯ РАЗРАБОТЧИКА ===')
+  console.log('Статус авторизации:', authStore.isAuthenticated)
+  console.log('Данные пользователя:', authStore.user)
+  console.log('Токен в localStorage:', token)
+  console.log('===================================')
 }
 
-// Добавляем обработчик клика по документу
-document.addEventListener('click', closeDropdown)
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/login')
+}
 </script>
 
 <style scoped>
@@ -93,13 +73,15 @@ document.addEventListener('click', closeDropdown)
   border-bottom: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   z-index: 1000;
+  display: flex;
+  align-items: center;
 }
 
 .container {
   max-width: var(--container-width);
   margin: 0 auto;
   padding: 0 2rem;
-  height: 100%;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -109,174 +91,72 @@ document.addEventListener('click', closeDropdown)
   text-decoration: none;
 }
 
-.logo {
-  max-width: 200px;
-}
-
 .logo-text {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--primary);
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
-.logo-sub-text {
-  font-size: 0.8rem;
-  color: var(--primary);
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.right-section {
+.auth-info {
   display: flex;
   align-items: center;
-  gap: 2rem;
 }
 
-.navigation {
+.user-badge {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-}
-
-.nav-link {
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 1rem;
+  gap: 1rem;
+  background: var(--gray-50);
   padding: 0.5rem 1rem;
   border-radius: var(--border-radius);
-  transition: var(--transition);
 }
 
-.nav-link:hover {
-  color: var(--primary);
-}
-
-.dropdown {
-  position: relative;
-}
-
-.dropdown-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: none;
+.logout-btn-small {
+  background: var(--gray-200);
   border: none;
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
   cursor: pointer;
-  padding: 0.5rem 0;
-  transition: var(--transition);
-}
-
-.dropdown-toggle:hover {
-  color: var(--primary);
-}
-
-.dropdown-arrow {
   font-size: 0.8rem;
-  transition: var(--transition);
 }
 
-.dropdown:hover .dropdown-arrow {
-  transform: rotate(180deg);
+.logout-btn-small:hover {
+  background: var(--gray-300);
 }
 
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: var(--white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
-  padding: 0.5rem 0;
-  min-width: 180px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-.dropdown:hover .dropdown-menu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.dropdown-item {
-  display: block;
-  padding: 0.75rem 1.5rem;
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-weight: 500;
-  transition: var(--transition);
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-}
-
-.dropdown-item:hover {
-  background: var(--gray-50);
-  color: var(--primary);
-}
-
-.auth-section {
+.auth-buttons {
   display: flex;
-  align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .auth-link {
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
-  transition: var(--transition);
 }
 
-.auth-link:hover {
-  color: var(--primary);
+.auth-button {
+  background: var(--primary);
+  color: var(--white);
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  font-weight: 600;
 }
 
-.avatar-img {
-  max-width: 50px;
-  height: auto;
+/* Большая заметная кнопка отладки */
+.big-debug-button {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 2rem;
 }
 
-@media (max-width: 768px) {
-  .container {
-    padding: 0 1rem;
-  }
-  
-  .navigation {
-    display: none;
-  }
-  
-  .right-section {
-    gap: 1rem;
-  }
-  
-  .auth-section {
-    gap: 1rem;
-  }
-  
-  .auth-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-  }
-
-  .logo-text {
-    font-size: 1rem;
-  }
+.big-debug-button:hover {
+  background: #e55a5a;
 }
 </style>
