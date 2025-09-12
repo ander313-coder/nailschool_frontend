@@ -4,8 +4,14 @@ export interface User {
   username: string;
   email: string;
   role: 'TRAINEE' | 'MASTER' | 'INSTRUCTOR';
-  avatar?: string;
+  first_name?: string;    
+  last_name?: string;     
+  phone?: string;
   bio?: string;
+  avatar?: string;
+  // Старые поля для обратной совместимости
+  name?: string;          
+  level?: string;         
 }
 
 // Типы для курсов

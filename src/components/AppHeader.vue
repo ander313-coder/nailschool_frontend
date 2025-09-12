@@ -41,7 +41,7 @@
                 <div class="user-avatar">
                   <span>{{ getUserInitials }}</span>
                 </div>
-                <span class="user-name">{{ authStore.user?.username }}</span>
+                <span class="user-name">{{ authStore.user?.username  }}</span>
               </button>
             </div>
           </template>

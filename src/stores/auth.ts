@@ -16,7 +16,9 @@ export const useAuthStore = defineStore('auth', () => {
         username,
         password,
       });
-      
+
+      console.log('✅ Login response:', response.data); // Логируем ответ
+
       const { access, refresh } = response.data;
       
       // Сохраняем токены
@@ -34,6 +36,33 @@ export const useAuthStore = defineStore('auth', () => {
       isLoading.value = false;
     }
   };
+  const fetchUserProfile = async () => {
+    try {
+      const response = await apiClient.get('/users/profile/');
+      console.log('✅ User profile response:', response.data); // Логируем профиль
+      const userData = response.data;
+
+       user.value = {
+        id: userData.id,
+        username: userData.username || userData.name || 'User',
+        email: userData.email || '',
+        role: (userData.role as 'TRAINEE' | 'MASTER' | 'INSTRUCTOR') || 'TRAINEE',
+        first_name: userData.first_name || userData.firstName,
+        last_name: userData.last_name || userData.lastName,
+        phone: userData.phone || '',
+        bio: userData.bio || '',
+        avatar: userData.avatar || null,
+      // Совместимость со старым форматом
+        name: userData.username || userData.name,
+        level: userData.role_display || userData.level
+      };
+      isAuthenticated.value = true;
+    } catch (error) {
+      console.error('❌ Failed to fetch user profile:', error);
+      logout();
+    }
+  };
+
 
   // Регистрация пользователя
   const register = async (username: string, password: string, email: string) => {
@@ -53,7 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
-  // Получение профиля пользователя
+/*   // Получение профиля пользователя
   const fetchUserProfile = async () => {
     try {
       const response = await apiClient.get('/users/profile/');
@@ -63,7 +92,7 @@ export const useAuthStore = defineStore('auth', () => {
       console.error('Failed to fetch user profile:', error);
       logout();
     }
-  };
+  }; */
 
   // Выход
   const logout = () => {
