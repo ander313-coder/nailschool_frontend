@@ -73,8 +73,9 @@ const authStore = useAuthStore()
 const isDropdownOpen = ref(false)
 
 const getUserInitials = computed(() => {
-  if (!authStore.user?.username) return 'U'
-  return authStore.user.username.charAt(0).toUpperCase()
+  const username = authStore.user?.first_name;
+  if (!username) return 'U';
+  return username.charAt(0).toUpperCase();
 })
 
 const handleLogout = () => {

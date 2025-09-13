@@ -4,8 +4,8 @@ export interface User {
   username: string;
   email: string;
   role: 'TRAINEE' | 'MASTER' | 'INSTRUCTOR';
-  first_name?: string;    
-  last_name?: string;     
+  first_name: string | null;    
+  last_name: string | null;    
   phone?: string;
   bio?: string;
   avatar?: string;
