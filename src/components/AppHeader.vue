@@ -13,9 +13,11 @@
 
       <!-- Правая часть - Навигация и Авторизация -->
       <div class="right-section">
+
         <!-- Центральная часть - Навигация -->
         <nav class="navigation">
           <router-link to="/" class="nav-link">Главная</router-link>
+          
           <!-- Выпадающее меню "Мои курсы" -->
           <div class="dropdown" @mouseenter="isDropdownOpen = true" @mouseleave="isDropdownOpen = false">
             <button class="dropdown-toggle">
@@ -36,20 +38,26 @@
         <!-- Правая часть - Авторизация -->
         <div class="auth-section">
           <template v-if="authStore.isAuthenticated">
-            <div class="user-menu">
-              <button class="user-button">
-                <div class="user-avatar">
-                  <span>{{ getUserInitials }}</span>
+            <div class="dropdown" @mouseenter="isDropdownOpen = true" @mouseleave="isDropdownOpen = false">
+              <button class="dropdown-toggle">
+                <div class="user-menu">
+                  <button class="user-button">
+                    <span class="user-avatar">{{ getUserInitials  }}</span>
+                  </button>
                 </div>
-                <span class="user-name">{{ authStore.user?.username  }}</span>
               </button>
-            </div>
+              <div class="dropdown-menu" v-show="isDropdownOpen">
+                <router-link to="/profile" class="dropdown-item">
+                  Настройки
+                </router-link>
+                <button class="dropdown-item" @click="handleLogout">
+                  Выйти
+                </button>
+              </div>
+          </div>
           </template>
           <template v-else>
             <router-link to="/login" class="auth-link">Войти</router-link>
-            <router-link to="/login" class="auth-link">
-              <img src="../assets/styles/pic/default-avatar.png" alt="avatar" class="avatar-img">
-            </router-link>            
           </template>
         </div>
       </div>
@@ -69,6 +77,10 @@ const getUserInitials = computed(() => {
   return authStore.user.username.charAt(0).toUpperCase()
 })
 
+const handleLogout = () => {
+  authStore.logout()
+  isDropdownOpen.value = false
+}
 
 // Закрываем dropdown при клике вне его
 const closeDropdown = (event: MouseEvent) => {
@@ -218,6 +230,7 @@ document.addEventListener('click', closeDropdown)
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
+  font-size: medium;
   transition: var(--transition);
   border: none;
   background: none;
@@ -231,27 +244,39 @@ document.addEventListener('click', closeDropdown)
   color: var(--primary);
 }
 
-.auth-section {
+.user-menu {
+  position: relative;
+}
+
+.user-button {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8); /* Синий градиент */
+  border: none;
+  border-radius: 50%; /* Делаем круглой */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
 }
 
-.auth-link {
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-weight: 500;
-  transition: var(--transition);
+.user-button:hover {
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-.auth-link:hover {
-  color: var(--primary);
+.user-avatar {
+  color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
-.avatar-img {
-  max-width: 50px;
-  height: auto;
-}
 
 @media (max-width: 768px) {
   .container {
@@ -270,13 +295,28 @@ document.addEventListener('click', closeDropdown)
     gap: 1rem;
   }
   
-  .auth-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+  .user-button {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .user-avatar {
+    font-size: 1rem;
   }
 
   .logo-text {
     font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-button {
+    width: 38px;
+    height: 38px;
+  }
+  
+  .user-avatar {
+    font-size: 0.9rem;
   }
 }
 </style>
