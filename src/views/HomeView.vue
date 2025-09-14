@@ -25,11 +25,13 @@
               </router-link>
             </div>
           </div>
-          <div class="hero-visual">
-            <div class="placeholder-image">
-              <span class="placeholder-text">✨ Видео-презентация школы</span>
-            </div>
-          </div>
+          <iframe 
+              width="560" 
+              height="315" 
+              src="https://play.boomstream.com/sXuALQMy" 
+              frameborder="0" 
+              allowfullscreen>
+          </iframe>
         </div>
       </div>
     </section>
@@ -38,20 +40,20 @@
     <section class="features-section">
       <div class="container">
         <div class="section-header">
-          <h2 class="section-title">Почему выбирают нашу школу</h2>
-          <p class="section-subtitle">Ключевые преимущества обучения в Zlobina Nails School</p>
+          <h2 class="features-title">Почему выбирают нашу школу</h2>
+          <p class="features-subtitle">Ключевые преимущества обучения в Zlobina Nails School</p>
         </div>
         <div class="features-columns">
           <div class="feature-column">
             <div class="feature-item">
-              <div class="feature-icon">🎓</div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/school.svg" alt="Профессиональные курсы" width="80" height="80"></div>
               <div class="feature-content">
                 <h3>Профессиональные курсы</h3>
                 <p>Обучение от базовых техник до сложного дизайна с сертификацией</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon">👩‍🏫</div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/glasses.svg" alt="Опытные преподаватели" width="80" height="80"></div>
               <div class="feature-content">
                 <h3>Опытные преподаватели</h3>
                 <p>Мастера с международным опытом и педагогическим образованием</p>
@@ -61,14 +63,14 @@
           
           <div class="feature-column">
             <div class="feature-item">
-              <div class="feature-icon">💻</div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/online.svg" alt="Онлайн-формат" width="80" height="80"></div>
               <div class="feature-content">
                 <h3>Онлайн-формат</h3>
                 <p>Учитесь из любой точки мира в удобное время с поддержкой куратора</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon">📋</div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/practise.svg" alt="Практические задания" width="80" height="80"></div>
               <div class="feature-content">
                 <h3>Практические задания</h3>
                 <p>Реальные кейсы и домашние задания с проверкой преподавателя</p>
@@ -78,31 +80,31 @@
           
           <div class="feature-column">
             <div class="feature-item">
-              <div class="feature-icon">📚</div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/structure.svg" alt="Структурированная программа" width="80" height="80"></div>
               <div class="feature-content">
                 <h3>Структурированная программа</h3>
                 <p>Пошаговое обучение от простого к сложному с закреплением материала</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon">🏆</div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/test.svg" alt="Автоматические тесты" width="80" height="80"></div>
               <div class="feature-content">
-                <h3>Сертификация</h3>
-                <p>Официальные сертификаты, признанные в индустрии красоты</p>
+                <h3>Автоматические тесты</h3>
+                <p>Итоговое тестирование на знание пройденного материала</p>
               </div>
             </div>
           </div>
           
           <div class="feature-column">
             <div class="feature-item">
-              <div class="feature-icon">🔄</div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/infinity.svg" alt="Пожизненный доступ" width="80" height="80"></div>
               <div class="feature-content">
                 <h3>Пожизненный доступ</h3>
                 <p>Возможность повторять материалы в любое время после обучения</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon">💼</div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/career.svg" alt="Карьерная поддержка" width="80" height="80"></div>
               <div class="feature-content">
                 <h3>Карьерная поддержка</h3>
                 <p>Помощь в трудоустройстве и запуске собственного бизнеса</p>
@@ -436,7 +438,21 @@ const authStore = useAuthStore()
 /* Features Section */
 .features-section {
   padding: 80px 0;
-  background: var(--white);
+  background: var(--primary);
+}
+
+.features-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 1rem;
+}
+
+.features-subtitle {
+  font-size: 1.25rem;
+  color: var(--white);
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .features-columns {
@@ -446,31 +462,35 @@ const authStore = useAuthStore()
 }
 
 .feature-column {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2rem;
 }
 
 .feature-item {
+  flex: 1;
+  min-height: 0;
   display: flex;
+  align-items: center;
   flex-direction: column;
   gap: 1rem;
 }
 
 .feature-icon {
   font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0 rem;
 }
 
 .feature-content h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--white);
   margin-bottom: 0.5rem;
 }
 
 .feature-content p {
-  color: var(--text-secondary);
+  color: var(--white);
   line-height: 1.5;
   font-size: 0.95rem;
 }
