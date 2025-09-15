@@ -6,7 +6,7 @@
         <router-link to="/" class="logo-link">
           <span class="logo-text">Zlobina Nails School</span>
           <div class="logo-sub-text">
-          <p>CORPORATE EDUCATION</p>
+          <p>PROF EDUCATION</p>
           </div>
         </router-link>
       </div>

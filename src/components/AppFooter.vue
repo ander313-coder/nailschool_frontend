@@ -13,16 +13,16 @@
         <div class="footer-social">
           <div class="social-links">
             <a href="#" class="social-link">
-              <img src="../assets/styles/pic/vk.png" alt="VK" class="social-icon">
+              <img src="../assets/styles/icons/vk.png" alt="VK" class="social-icon">
             </a>
             <a href="#" class="social-link">
-              <img src="../assets/styles/pic/tg.png" alt="TG" class="social-icon">
+              <img src="../assets/styles/icons/tg.png" alt="TG" class="social-icon">
             </a>
             <a href="#" class="social-link">
-              <img src="../assets/styles/pic/wa.png" alt="WA" class="social-icon">
+              <img src="../assets/styles/icons/wa.png" alt="WA" class="social-icon">
             </a>
             <a href="#" class="social-link">
-              <img src="../assets/styles/pic/ins.png" alt="INS" class="social-icon">
+              <img src="../assets/styles/icons/ins.png" alt="INS" class="social-icon">
             </a>
           </div>
         </div>

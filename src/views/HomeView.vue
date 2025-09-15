@@ -565,6 +565,7 @@ const authStore = useAuthStore()
 
 .course-content {
   padding: 1.5rem;
+
 }
 
 .course-content h3 {

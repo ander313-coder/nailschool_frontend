@@ -16,12 +16,12 @@ const router = createRouter({
     {
       path: '/lessons',
       name: 'lessons',
-      component: () => import('@/views/HomeView.vue') // Заглушка
+      component: () => import('@/views/HomeView.vue') 
     },
     {
       path: '/tests',
       name: 'tests',
-      component: () => import('@/views/HomeView.vue') // Заглушка
+      component: () => import('@/views/HomeView.vue') 
     },
     {
       path: '/login',
@@ -37,7 +37,12 @@ const router = createRouter({
     {
       path: '/profile',
       name: 'profile',
-      component: () => import('@/views/HomeView.vue') // Заглушка
+      component: () => import('@/views/HomeView.vue') 
+    },
+    {
+  path: '/about',
+  name: 'about',
+  component: () => import('@/views/AboutView.vue')
     }
   ]
 })

@@ -8,12 +8,6 @@
     
     <AppFooter />
 
-    <!-- Временная отладочная панель -->
-    <div v-if="authStore.isAuthenticated" class="debug-panel">
-      <h4>Отладочная информация:</h4>
-      <pre>{{ authStore.user }}</pre>
-    </div>
-
     <div v-if="authStore.isLoading" class="loading-overlay">
       <div class="loading-spinner">Загрузка...</div>
     </div>
@@ -77,28 +71,4 @@ body {
   font-weight: bold;
 }
 
-.debug-panel {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 1rem;
-  border-radius: 8px;
-  max-width: 300px;
-  max-height: 200px;
-  overflow: auto;
-  font-size: 12px;
-  z-index: 9999;
-}
-
-.debug-panel h4 {
-  margin: 0 0 0.5rem 0;
-  color: #4ecdc4;
-}
-
-.debug-panel pre {
-  margin: 0;
-  white-space: pre-wrap;
-}
 </style>
