@@ -25,13 +25,15 @@
               </router-link>
             </div>
           </div>
-          <iframe 
-              width="560" 
-              height="315" 
-              src="https://play.boomstream.com/sXuALQMy" 
-              frameborder="0" 
-              allowfullscreen>
-          </iframe>
+          <div class="hero-visual">
+            <iframe 
+                width="100%" 
+                height="300" 
+                src="https://play.boomstream.com/sXuALQMy?color=%23ffffff&title=0&size=cover&volume=20"
+                frameborder="0" 
+                allowfullscreen>
+            </iframe>
+          </div>
         </div>
       </div>
     </section>
@@ -46,14 +48,14 @@
         <div class="features-columns">
           <div class="feature-column">
             <div class="feature-item">
-              <div class="feature-icon"><img src="/src/assets/styles/icons/school.svg" alt="Профессиональные курсы" width="80" height="80"></div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/school.svg" alt="Профессиональные курсы"></div>
               <div class="feature-content">
                 <h3>Профессиональные курсы</h3>
                 <p>Обучение от базовых техник до сложного дизайна с сертификацией</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon"><img src="/src/assets/styles/icons/glasses.svg" alt="Опытные преподаватели" width="80" height="80"></div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/glasses.svg" alt="Опытные преподаватели"></div>
               <div class="feature-content">
                 <h3>Опытные преподаватели</h3>
                 <p>Мастера с международным опытом и педагогическим образованием</p>
@@ -63,14 +65,14 @@
           
           <div class="feature-column">
             <div class="feature-item">
-              <div class="feature-icon"><img src="/src/assets/styles/icons/online.svg" alt="Онлайн-формат" width="80" height="80"></div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/online.svg" alt="Онлайн-формат"></div>
               <div class="feature-content">
                 <h3>Онлайн-формат</h3>
                 <p>Учитесь из любой точки мира в удобное время с поддержкой куратора</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon"><img src="/src/assets/styles/icons/practise.svg" alt="Практические задания" width="80" height="80"></div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/practise.svg" alt="Практические задания"></div>
               <div class="feature-content">
                 <h3>Практические задания</h3>
                 <p>Реальные кейсы и домашние задания с проверкой преподавателя</p>
@@ -80,14 +82,14 @@
           
           <div class="feature-column">
             <div class="feature-item">
-              <div class="feature-icon"><img src="/src/assets/styles/icons/structure.svg" alt="Структурированная программа" width="80" height="80"></div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/structure.svg" alt="Структурированная программа"></div>
               <div class="feature-content">
                 <h3>Структурированная программа</h3>
                 <p>Пошаговое обучение от простого к сложному с закреплением материала</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon"><img src="/src/assets/styles/icons/test.svg" alt="Автоматические тесты" width="80" height="80"></div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/test.svg" alt="Автоматические тесты"></div>
               <div class="feature-content">
                 <h3>Автоматические тесты</h3>
                 <p>Итоговое тестирование на знание пройденного материала</p>
@@ -97,14 +99,14 @@
           
           <div class="feature-column">
             <div class="feature-item">
-              <div class="feature-icon"><img src="/src/assets/styles/icons/infinity.svg" alt="Пожизненный доступ" width="80" height="80"></div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/infinity.svg" alt="Пожизненный доступ"></div>
               <div class="feature-content">
                 <h3>Пожизненный доступ</h3>
                 <p>Возможность повторять материалы в любое время после обучения</p>
               </div>
             </div>
             <div class="feature-item">
-              <div class="feature-icon"><img src="/src/assets/styles/icons/career.svg" alt="Карьерная поддержка" width="80" height="80"></div>
+              <div class="feature-icon"><img src="/src/assets/styles/icons/career.svg" alt="Карьерная поддержка"></div>
               <div class="feature-content">
                 <h3>Карьерная поддержка</h3>
                 <p>Помощь в трудоустройстве и запуске собственного бизнеса</p>
@@ -184,7 +186,7 @@
         <div class="courses-grid">
           <div class="course-card">
             <div class="course-image">
-              <span class="placeholder-text">📸 Основы маникюра</span>
+              <img src="/src/assets/styles/pic/pilki.jpg" alt="Основы маникюра" class="course-img">
             </div>
             <div class="course-content">
               <h3>Основы маникюра</h3>
@@ -197,11 +199,11 @@
           </div>
           <div class="course-card">
             <div class="course-image">
-              <span class="placeholder-text">📸 Гелевый дизайн</span>
+              <img src="/src/assets/styles/pic/pilki.jpg" alt="Пилки + Плёнки" class="course-img">
             </div>
             <div class="course-content">
-              <h3>Гелевый дизайн</h3>
-              <p>Продвинутые техники работы с гель-лаками</p>
+              <h3>Пилки + Плёнки</h3>
+              <p>Пилочный маникюр с покрытием плёнки</p>
               <div class="course-meta">
                 <span class="meta-item">⏱ 36 уроков</span>
                 <span class="meta-item">👥 Для мастеров</span>
@@ -210,11 +212,11 @@
           </div>
           <div class="course-card">
             <div class="course-image">
-              <span class="placeholder-text">📸 Бизнес-курс</span>
+              <img src="/src/assets/styles/pic/pilki.jpg" alt="Пилочный маникюр для себя" class="course-img">
             </div>
             <div class="course-content">
-              <h3>Бизнес для мастера</h3>
-              <p>Как построить успешный бизнес в индустрии красоты</p>
+              <h3>Пилочный маникюр для себя</h3>
+              <p>Как сделать красивый манюкир самостоятельно</p>
               <div class="course-meta">
                 <span class="meta-item">⏱ 18 уроков</span>
                 <span class="meta-item">👥 Для всех уровней</span>
@@ -235,7 +237,7 @@
       <div class="container">
         <div class="stats-grid">
           <div class="stat-item">
-            <div class="stat-number">500+</div>
+            <div class="stat-number">50+</div>
             <div class="stat-label">Выпускников</div>
           </div>
           <div class="stat-item">
@@ -243,8 +245,8 @@
             <div class="stat-label">Трудоустроились</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number">1000+</div>
-            <div class="stat-label">Часов обучения</div>
+            <div class="stat-number">100+</div>
+            <div class="stat-label">Уроков</div>
           </div>
           <div class="stat-item">
             <div class="stat-number">24/7</div>
@@ -303,7 +305,6 @@ const authStore = useAuthStore()
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4rem;
-  align-items: center;
 }
 
 .hero-title {
@@ -382,26 +383,8 @@ const authStore = useAuthStore()
 
 .hero-visual {
   display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.placeholder-image {
-  width: 100%;
-  max-width: 500px;
-  height: 400px;
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent) 100%);
-  border-radius: var(--border-radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--white);
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.placeholder-text {
-  opacity: 0.8;
+  justify-content: flex-start;
+  align-items: flex-start;
 }
 
 /* Sections Common */
@@ -565,12 +548,19 @@ const authStore = useAuthStore()
 
 .course-image {
   height: 200px;
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 100%);
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--white);
-  font-weight: 600;
+  overflow: hidden;
+  position: relative;
+}
+
+.course-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .course-content {
