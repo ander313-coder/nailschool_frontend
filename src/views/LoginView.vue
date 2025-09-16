@@ -167,6 +167,7 @@ const handleLogin = async () => {
   font-weight: 700;
   margin-bottom: 1rem;
   font-family: var(--font-family);
+  color: white;
 }
 
 .welcome-subtitle {
@@ -247,6 +248,7 @@ const handleLogin = async () => {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   padding: 0.75rem 1rem;
+  margin-left: 20px;
   font-size: 0.95rem;
   transition: var(--transition);
 }
@@ -257,7 +259,7 @@ const handleLogin = async () => {
 }
 
 .form-input::placeholder {
-  color: var(--gray-400);
+  color: gainsboro;
 }
 
 .login-button {
