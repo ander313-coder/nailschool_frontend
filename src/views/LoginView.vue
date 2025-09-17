@@ -17,20 +17,20 @@
               class="tab-button active"
               @click="switchTab('login')"
             >
-              Login
+              Войти
             </button>
             <button 
               class="tab-button"
               @click="switchTab('register')"
               disabled
             >
-              Register
+              Зарегистрироваться
             </button>
           </div>
 
           <form class="login-form" @submit.prevent="handleLogin">
             <div class="form-group">
-              <label for="username" class="form-label">User name</label>
+              <label for="username" class="form-label">Имя</label>
               <input
                 id="username"
                 v-model="formData.username"
@@ -42,7 +42,7 @@
             </div>
 
             <div class="form-group">
-              <label for="password" class="form-label">Password</label>
+              <label for="password" class="form-label">Пароль</label>
               <input
                 id="password"
                 v-model="formData.password"
@@ -58,8 +58,8 @@
               class="login-button"
               :disabled="isLoading"
             >
-              <span v-if="!isLoading">Login</span>
-              <span v-else class="loading">Logging in...</span>
+              <span v-if="!isLoading">Вход</span>
+              <span v-else class="loading">Вход...</span>
             </button>
 
             <div v-if="errorMessage" class="error-message">
@@ -248,9 +248,9 @@ const handleLogin = async () => {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   padding: 0.75rem 1rem;
-  margin-left: 20px;
   font-size: 0.95rem;
   transition: var(--transition);
+  width: 100%
 }
 
 .form-input:focus {
