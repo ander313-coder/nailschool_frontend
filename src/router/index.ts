@@ -35,14 +35,27 @@ const router = createRouter({
       component: () => import('@/views/RegisterView.vue')
     },
     {
-      path: '/profile',
-      name: 'profile',
-      component: () => import('@/views/HomeView.vue') 
+      path: '/about',
+      name: 'about',
+      component: () => import('@/views/AboutView.vue')
     },
     {
-  path: '/about',
-  name: 'about',
-  component: () => import('@/views/AboutView.vue')
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('@/views/dashboard/DashboardView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/my-courses',
+      name: 'my-courses',
+      component: () => import('@/views/dashboard/UserCoursesView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('@/views/dashboard/ProfileSettingsView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

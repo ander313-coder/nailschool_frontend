@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import type { User } from '@/types/api';
 import apiClient from '@/api/client';
 
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
   const isAuthenticated = ref(false);
@@ -81,18 +82,6 @@ export const useAuthStore = defineStore('auth', () => {
       isLoading.value = false;
     }
   };
-
-/*   // Получение профиля пользователя
-  const fetchUserProfile = async () => {
-    try {
-      const response = await apiClient.get('/users/profile/');
-      user.value = response.data;
-      isAuthenticated.value = true;
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error);
-      logout();
-    }
-  }; */
 
   // Выход
   const logout = () => {
