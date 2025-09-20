@@ -1,47 +1,59 @@
 <template>
-  <div class="courses-page">
-    <div class="page-header">
-      <h1>Все курсы</h1>
-      <p>Выберите курс для начала обучения</p>
+  <div class="course-detail">
+    <div class="course-header">
+      <h1>Курс: {{ courseId }}</h1>
+      <p>Страница курса в разработке</p>
     </div>
-
-    <div class="coming-soon">
-      <div class="coming-soon-content">
-        <span class="icon">🎓</span>
-        <h2>Каталог курсов в разработке</h2>
-        <p>Скоро здесь появится полный список всех доступных курсов</p>
-        <router-link to="/dashboard" class="back-button">
-          ← Назад к дашборду
-        </router-link>
+    
+    <div class="course-content">
+      <div class="coming-soon">
+        <div class="coming-soon-content">
+          <span class="icon">🎓</span>
+          <h2>Страница курса скоро будет доступна</h2>
+          <p>Мы работаем над этим разделом</p>
+          <router-link to="/dashboard" class="back-button">
+            ← Назад к дашборду
+          </router-link>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+
+const courseId = computed(() => route.params.id);
 </script>
 
 <style scoped>
-.courses-page {
+.course-detail {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
 
-.page-header {
+.course-header {
   margin-bottom: 32px;
 }
 
-.page-header h1 {
+.course-header h1 {
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 8px;
   color: #333;
 }
 
-.page-header p {
+.course-header p {
   color: #666;
   font-size: 16px;
+}
+
+.course-content {
+  margin-top: 24px;
 }
 
 .coming-soon {

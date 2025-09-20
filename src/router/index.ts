@@ -14,9 +14,21 @@ const router = createRouter({
       component: () => import('@/views/CoursesView.vue')
     },
     {
+      path: '/courses/:id',
+      name: 'course-detail',
+      component: () => import('@/views/CourseDetailView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/lessons',
       name: 'lessons',
       component: () => import('@/views/HomeView.vue') 
+    },
+    {
+      path: '/lessons/:id',
+      name: 'lesson-detail',
+      component: () => import('@/views/LessonView.vue'), 
+      meta: { requiresAuth: true }
     },
     {
       path: '/tests',
@@ -51,10 +63,22 @@ const router = createRouter({
       component: () => import('@/views/dashboard/UserCoursesView.vue'),
       meta: { requiresAuth: true }
     },
+{
+      path: '/progress',
+      name: 'progress',
+      component: () => import('@/views/dashboard/ProgressView.vue'),
+      meta: { requiresAuth: true }
+    },
     {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/dashboard/ProfileSettingsView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('@/views/dashboard/SettingsView.vue'), 
       meta: { requiresAuth: true }
     }
   ]

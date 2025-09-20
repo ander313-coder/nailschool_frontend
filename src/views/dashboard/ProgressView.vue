@@ -1,15 +1,14 @@
 <template>
   <DashboardLayout>
-    <div class="profile-page">
-      <!-- Заголовок страницы -->
+    <div class="progress-view">
       <div class="page-header">
-        <h1>Настройки профиля</h1>
-        <p>Управление вашими персональными данными</p>
+        <h1>Мой прогресс</h1>
+        <p>Здесь вы можете отслеживать свой прогресс в обучении</p>
       </div>
-
+      
       <div class="coming-soon">
         <div class="coming-soon-content">
-          <span class="icon">👤</span>
+          <span class="icon">📈</span>
           <h2>Скоро будет доступно</h2>
           <p>Раздел находится в разработке</p>
         </div>
@@ -23,9 +22,10 @@ import DashboardLayout from './DashboardLayout.vue';
 </script>
 
 <style scoped>
-.profile-page {
+.progress-view {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 20px;
 }
 
 .page-header {
