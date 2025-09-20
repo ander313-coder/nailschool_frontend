@@ -9,6 +9,8 @@ export interface User {
   phone?: string;
   bio?: string;
   avatar?: string;
+  progress?: number;
+  next_role_display?: string | null;
   // Старые поля для обратной совместимости
   name?: string;          
   level?: string;         

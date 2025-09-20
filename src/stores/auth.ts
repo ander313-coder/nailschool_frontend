@@ -53,6 +53,8 @@ export const useAuthStore = defineStore('auth', () => {
         phone: userData.phone || '',
         bio: userData.bio || '',
         avatar: userData.avatar || null,
+        progress: userData.progress || 0, 
+        next_role_display: userData.next_role_display || null, 
       // Совместимость со старым форматом
         name: userData.username || userData.name,
         level: userData.role_display || userData.level
