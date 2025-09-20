@@ -1,0 +1,19 @@
+:root {
+  --primary: #8C4CC3;
+  --primary-dark: #7b3fb3;
+  --accent: #FF6B6B;
+  --secondary: #4ECDC4;
+  --white: #ffffff;
+  --gray-50: #f8f9fa;
+  --gray-100: #f1f3f5;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --border-color: #dee2e6;
+  --error: #dc3545;
+  --error-light: #f8d7da;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+  --border-radius: 8px;
+  --transition: all 0.3s ease;
+  --container-width: 1200px;
+}

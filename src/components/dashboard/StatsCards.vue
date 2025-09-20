@@ -2,7 +2,7 @@
   <div class="stats-cards">
     <!-- Карточка активных курсов -->
     <div class="stat-card">
-      <div class="stat-icon">🎓</div>
+      <div class="stat-icon"><img src="/src/assets/styles/icons/school.svg" alt="Активные курсы"></div>
       <div class="stat-content">
         <h3>Активные курсы</h3>
         <p class="stat-number">{{ coursesStore.activeCoursesCount }}</p>
@@ -12,7 +12,7 @@
 
     <!-- Карточка пройденных уроков -->
     <div class="stat-card">
-      <div class="stat-icon">✅</div>
+      <div class="stat-icon"><img src="/src/assets/styles/icons/structure.svg" alt="Пройдено уроков"></div>
       <div class="stat-content">
         <h3>Пройдено уроков</h3>
         <p class="stat-number">{{ coursesStore.completedLessonsCount }}</p>
@@ -22,7 +22,7 @@
 
     <!-- Карточка среднего прогресса -->
     <div class="stat-card">
-      <div class="stat-icon">📊</div>
+      <div class="stat-icon"><img src="/src/assets/styles/icons/practise.svg" alt="Общий прогресс"></div>
       <div class="stat-content">
         <h3>Общий прогресс</h3>
         <p class="stat-number">{{ authStore.user?.progress || 0 }}%</p>
@@ -32,7 +32,7 @@
 
     <!-- Карточка следующий тест -->
     <div class="stat-card">
-      <div class="stat-icon">📝</div>
+      <div class="stat-icon"><img src="/src/assets/styles/icons/test.svg" alt="Следующий тест"></div>
       <div class="stat-content">
         <h3>Следующий тест</h3>
         <p class="stat-number">{{ upcomingTests }}</p>
@@ -85,7 +85,7 @@ const upcomingTests = 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8f9fa;
+  background: #8C4CC3;
   border-radius: 12px;
 }
 
