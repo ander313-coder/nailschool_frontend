@@ -40,10 +40,7 @@
         </div>
 
         <div class="course-actions">
-          <router-link 
-            to="/dashboard" 
-            class="continue-button"
-          >
+          <router-link :to="`/courses/${course.id}`" class="continue-button">
             Продолжить
           </router-link>
         </div>

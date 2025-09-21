@@ -1,10 +1,5 @@
 <template>
   <DashboardLayout>
-    <!-- Заголовок страницы -->
-    <div class="dashboard-header">
-      <h1>Обзор</h1>
-      <p>Добро пожаловать в ваш личный кабинет! Здесь вы можете отслеживать свой прогресс.</p>
-    </div>
 
     <!-- Состояние загрузки -->
     <div v-if="coursesStore.isLoading" class="loading-state">
@@ -25,32 +20,6 @@
       <StatsCards />
       <!-- Компонент с курсами -->
       <UserCourses />
-
-      <!-- Блок быстрых действий -->
-      <div class="quick-actions">
-        <h2>Быстрые действия</h2>
-        <div class="actions-grid">
-          <router-link to="/my-courses" class="action-card">
-            <span class="action-icon">🎓</span>
-            <span class="action-text">Мои курсы</span>
-          </router-link>
-          
-          <router-link to="/progress" class="action-card">
-            <span class="action-icon">📈</span>
-            <span class="action-text">Прогресс</span>
-          </router-link>
-          
-          <router-link to="/profile" class="action-card">
-            <span class="action-icon">👤</span>
-            <span class="action-text">Профиль</span>
-          </router-link>
-          
-          <router-link to="/courses" class="action-card">
-            <span class="action-icon">🔍</span>
-            <span class="action-text">Все курсы</span>
-          </router-link>
-        </div>
-      </div>
     </template>
   </DashboardLayout>
 </template>

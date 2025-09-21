@@ -36,6 +36,18 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue') 
     },
     {
+      path: '/tests/:id',
+      name: 'test-detail',
+      component: () => import('@/views/TestView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/tests/:id/results',
+      name: 'test-results',
+      component: () => import('@/views/TestResultsView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/views/LoginView.vue'),

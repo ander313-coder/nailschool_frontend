@@ -5,7 +5,7 @@
       <div class="login-welcome">
         <div class="welcome-content">
           <h1 class="welcome-title">Zlobina Nails School</h1>
-          <p class="welcome-subtitle">CORPORATE EDUCATION</p>
+          <p class="welcome-subtitle">PROF EDUCATION</p>
         </div>
       </div>
 
