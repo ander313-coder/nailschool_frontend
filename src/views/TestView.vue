@@ -55,47 +55,36 @@
           <div class="answers-container">
             <!-- Одиночный выбор -->
             <div 
-              v-if="currentQuestion.type === 'SINGLE'"
-              class="answers-single"
+            v-if="currentQuestion.type === 'SINGLE'"
+            class="answers-single"
             >
-              <label 
+            <label 
                 v-for="answer in currentQuestion.answers" 
                 :key="answer.id"
                 class="answer-radio"
-                :class="{ 'selected': selectedAnswers.includes(answer.id) }"
-              >
-                <input
-                  type="radio"
-                  :name="'answer-' + currentQuestion.id"
-                  :value="answer.id"
-                  v-model="selectedAnswers"
-                  class="radio-input"
-                />
+                :class="{ 'selected': isSelected(answer.id) }"
+                @click="handleSingleSelect(answer.id)"
+            >
                 <span class="radio-custom"></span>
                 <span class="answer-text">{{ answer.text }}</span>
-              </label>
+            </label>
             </div>
 
             <!-- Множественный выбор -->
             <div 
-              v-if="currentQuestion.type === 'MULTIPLE'"
-              class="answers-multiple"
+            v-if="currentQuestion.type === 'MULTIPLE'"
+            class="answers-multiple"
             >
-              <label 
+            <label 
                 v-for="answer in currentQuestion.answers" 
                 :key="answer.id"
                 class="answer-checkbox"
-                :class="{ 'selected': selectedAnswers.includes(answer.id) }"
-              >
-                <input
-                  type="checkbox"
-                  :value="answer.id"
-                  v-model="selectedAnswers"
-                  class="checkbox-input"
-                />
+                :class="{ 'selected': isSelected(answer.id) }"
+                @click="handleMultipleSelect(answer.id)"
+            >
                 <span class="checkbox-custom"></span>
                 <span class="answer-text">{{ answer.text }}</span>
-              </label>
+            </label>
             </div>
 
             <!-- Текстовый ответ -->
@@ -156,9 +145,11 @@ const router = useRouter();
 const test = ref<any>(null);
 const questions = ref<any[]>([]);
 const currentQuestionIndex = ref(0);
-const selectedAnswers = ref<(number | string)[]>([]);
 const textAnswer = ref('');
 const userAnswers = ref<Record<number, any>>({});
+
+// Используем ref для массива, но будем работать с ним правильно
+const selectedAnswers = ref<(number | string)[]>([]);
 
 // Заглушки данных
 onMounted(() => {
@@ -210,7 +201,7 @@ const loadTestData = () => {
 
     // Инициализируем ответы пользователя
     questions.value.forEach((q) => {
-    userAnswers.value[q.id] = q.type === 'TEXT' ? '' : [];
+      userAnswers.value[q.id] = q.type === 'TEXT' ? '' : [];
     });
   }, 500);
 };
@@ -269,6 +260,24 @@ const resetAnswerUI = () => {
   } else {
     selectedAnswers.value = savedAnswer ? [...savedAnswer] : [];
   }
+};
+
+// Методы для управления выбором ответов
+const handleSingleSelect = (answerId: number) => {
+  selectedAnswers.value = [answerId];
+};
+
+const handleMultipleSelect = (answerId: number) => {
+  const index = selectedAnswers.value.indexOf(answerId);
+  if (index === -1) {
+    selectedAnswers.value.push(answerId);
+  } else {
+    selectedAnswers.value.splice(index, 1);
+  }
+};
+
+const isSelected = (answerId: number) => {
+  return selectedAnswers.value.includes(answerId);
 };
 
 const submitTest = () => {
