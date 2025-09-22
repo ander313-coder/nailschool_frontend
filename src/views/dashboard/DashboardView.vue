@@ -18,6 +18,8 @@
       <DashboardStatus />
       <!-- Карточки статистики -->
       <StatsCards />
+      <!-- Прогресс по курсам -->
+      <CourseProgress />
       <!-- Компонент с курсами -->
       <UserCourses />
     </template>
@@ -31,6 +33,7 @@ import DashboardStatus from '@/components/dashboard/DashboardStatus.vue';
 import UserCourses from '@/components/dashboard/UserCourses.vue';
 import StatsCards from '@/components/dashboard/StatsCards.vue';
 import { useCoursesStore } from '@/stores/courses';
+import CourseProgress from '@/components/dashboard/CourseProgress.vue';
 
 const coursesStore = useCoursesStore();
 

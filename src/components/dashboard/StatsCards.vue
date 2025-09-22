@@ -5,7 +5,7 @@
       <div class="stat-icon"><img src="/src/assets/styles/icons/school.svg" alt="Активные курсы"></div>
       <div class="stat-content">
         <h3>Активные курсы</h3>
-        <p class="stat-number">{{ coursesStore.activeCoursesCount }}</p>
+        <p class="stat-number">{{ activeCoursesCount }}</p> 
         <p class="stat-label">в процессе обучения</p>
       </div>
     </div>
@@ -15,7 +15,7 @@
       <div class="stat-icon"><img src="/src/assets/styles/icons/structure.svg" alt="Пройдено уроков"></div>
       <div class="stat-content">
         <h3>Пройдено уроков</h3>
-        <p class="stat-number">{{ coursesStore.completedLessonsCount }}</p>
+        <p class="stat-number">{{ completedLessonsCount }}</p>
         <p class="stat-label">успешно завершено</p>
       </div>
     </div>
@@ -25,7 +25,7 @@
       <div class="stat-icon"><img src="/src/assets/styles/icons/practise.svg" alt="Общий прогресс"></div>
       <div class="stat-content">
         <h3>Общий прогресс</h3>
-        <p class="stat-number">{{ authStore.user?.progress || 0 }}%</p>
+        <p class="stat-number">{{ user?.progress || 0 }}%</p>
         <p class="stat-label">по всем курсам</p>
       </div>
     </div>
@@ -44,13 +44,42 @@
 
 <script setup lang="ts">
 import { useCoursesStore } from '@/stores/courses';
+import { useProgressStore } from '@/stores/progress';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 
 const coursesStore = useCoursesStore();
+const progressStore = useProgressStore();
 const authStore = useAuthStore();
 
-// Пока заглушка для тестов
-const upcomingTests = 2;
+const { courses } = storeToRefs(coursesStore);
+const { totalCompletedLessons, totalCompletedTests } = storeToRefs(progressStore);
+const { user } = storeToRefs(authStore);
+
+// Вычисляем общую статистику
+const activeCoursesCount = computed(() => courses.value.length);
+
+const completedLessonsCount = computed(() => {
+  return totalCompletedLessons.value;
+});
+
+const averageProgress = computed(() => {
+  if (courses.value.length === 0) return 0;
+  
+  // Вычисляем средний прогресс по всем курсам
+  const totalProgress = courses.value.reduce((sum, course) => {
+    // Здесь можно добавить логику расчета прогресса по курсу
+    return sum + 65; // Заглушка
+  }, 0);
+  
+  return Math.round(totalProgress / courses.value.length);
+});
+
+// Считаем предстоящие тесты (заглушка)
+const upcomingTests = computed(() => {
+  return Math.max(0, 3 - totalCompletedTests.value); // Заглушка
+});
 </script>
 
 <style scoped>

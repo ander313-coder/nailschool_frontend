@@ -17,6 +17,7 @@
           <div class="video-container">
             <video 
               v-if="lesson?.video_url"
+              ref="videoElement"
               :src="lesson.video_url"
               controls
               class="video-element"
@@ -118,19 +119,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useProgressStore } from '@/stores/progress';
 
 const route = useRoute();
 const router = useRouter();
+const progressStore = useProgressStore();
 
 const lesson = ref<any>(null);
 const courseLessons = ref<any[]>([]);
 const isPlaying = ref(false);
 
-// Заглушки данных
+// Добавляем отслеживание прогресса видео
+const videoProgress = ref(0);
+const videoElement = ref<HTMLVideoElement | null>(null);
+
+const setupVideoProgress = () => {
+  if (videoElement.value && lesson.value?.video_url) {
+    videoElement.value.addEventListener('timeupdate', () => {
+      if (videoElement.value) {
+        const progress = (videoElement.value.currentTime / videoElement.value.duration) * 100;
+        videoProgress.value = progress;
+        progressStore.updateLessonProgress(lesson.value.id, progress);
+      }
+    });
+  }
+};
+
+// Отмечаем урок как завершенный
+const markAsCompleted = () => {
+  if (lesson.value) {
+    progressStore.completeLesson(lesson.value.id);
+    lesson.value.is_completed = true;
+  }
+};
+
+// Проверяем статус урока при загрузке
 onMounted(() => {
   loadLessonData();
+  setTimeout(() => {
+    setupVideoProgress();
+  }, 600);
 });
 
 const loadLessonData = () => {
@@ -145,6 +175,12 @@ const loadLessonData = () => {
       is_completed: false,
       is_unlocked: true
     };
+
+    // Проверяем статус урока после загрузки данных
+    const isCompleted = progressStore.isLessonCompleted(lesson.value.id);
+    if (isCompleted) {
+      lesson.value.is_completed = true;
+    }
 
     courseLessons.value = [
       { id: 1, order: 1, title: 'Введение в маникюр', duration_minutes: 15, is_completed: true, is_unlocked: true },
@@ -170,12 +206,6 @@ const nextLesson = computed(() => {
 });
 
 // Методы
-const markAsCompleted = () => {
-  if (lesson.value) {
-    lesson.value.is_completed = true;
-  }
-};
-
 const navigateToLesson = (lessonItem: any) => {
   if (lessonItem.is_unlocked) {
     router.push(`/lessons/${lessonItem.id}`);

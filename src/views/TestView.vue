@@ -138,6 +138,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useProgressStore } from '@/stores/progress';
 
 const route = useRoute();
 const router = useRouter();
@@ -147,6 +148,7 @@ const questions = ref<any[]>([]);
 const currentQuestionIndex = ref(0);
 const textAnswer = ref('');
 const userAnswers = ref<Record<number, any>>({});
+const progressStore = useProgressStore();
 
 // Используем ref для массива, но будем работать с ним правильно
 const selectedAnswers = ref<(number | string)[]>([]);
@@ -282,7 +284,9 @@ const isSelected = (answerId: number) => {
 
 const submitTest = () => {
   saveAnswer();
-  
+    // Отмечаем тест как завершенный
+  progressStore.completeTest(test.value.id);
+
   // Здесь будет логика отправки теста на сервер
   console.log('Ответы пользователя:', userAnswers.value);
   
