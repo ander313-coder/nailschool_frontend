@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { Course, Lesson } from '@/types/api';
+
 
 export const useProgressStore = defineStore('progress', () => {
   const completedLessons = ref<Set<number>>(new Set());
