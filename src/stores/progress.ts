@@ -14,7 +14,7 @@ export const useProgressStore = defineStore('progress', () => {
     saveToLocalStorage();
   };
 
-  // Завершить тест
+  // Завершить тест 
   const completeTest = (testId: number) => {
     completedTests.value.add(testId);
     saveToLocalStorage();
