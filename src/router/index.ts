@@ -20,33 +20,24 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/lessons',
-      name: 'lessons',
-      component: () => import('@/views/HomeView.vue') 
-    },
-    {
-      path: '/lessons/:id',
+      path: '/course/:courseId/lesson/:lessonId',
       name: 'lesson-detail',
-      component: () => import('@/views/LessonView.vue'), 
+      component: () => import('@/views/LessonView.vue'),
       meta: { requiresAuth: true }
     },
     {
-      path: '/tests',
-      name: 'tests',
-      component: () => import('@/views/HomeView.vue') 
-    },
-    {
-      path: '/tests/:id',
-      name: 'test-detail',
+      path: '/course/:courseId/lesson/:lessonId/test',
+      name: 'lesson-test',
       component: () => import('@/views/TestView.vue'),
       meta: { requiresAuth: true }
     },
     {
-      path: '/tests/:id/results',
+      path: '/course/:courseId/lesson/:lessonId/test/results',
       name: 'test-results',
       component: () => import('@/views/TestResultsView.vue'),
       meta: { requiresAuth: true }
     },
+    
     {
       path: '/login',
       name: 'login',
@@ -75,7 +66,7 @@ const router = createRouter({
       component: () => import('@/views/dashboard/UserCoursesView.vue'),
       meta: { requiresAuth: true }
     },
-{
+    {
       path: '/progress',
       name: 'progress',
       component: () => import('@/views/dashboard/ProgressView.vue'),

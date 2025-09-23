@@ -11,6 +11,9 @@ export interface User {
   avatar?: string;
   progress?: number;
   next_role_display?: string | null;
+  // Старые поля для обратной совместимости
+  name?: string;          
+  level?: string;         
 }
 
 // Типы для курсов
@@ -18,47 +21,58 @@ export interface Course {
   id: number;
   title: string;
   description: string;
-  short_description?: string;
-  access_level: 'BASIC' | 'ADVANCED' | 'ALL';
-  course_type: 'VIDEO' | 'TEXT' | 'MIXED';
+  access_level: string;
+  course_type: string;
   cover_image?: string;
   lesson_count?: number;
-  duration_minutes?: number;
-  instructors?: User[];
-  created_at?: string;
-  updated_at?: string;
 }
 
 // Типы для уроков
 export interface Lesson {
   id: number;
-  course_id: number;
   title: string;
-  description: string;
-  short_description?: string;
-  video_url?: string;
-  duration_minutes: number;
   order: number;
-  is_completed?: boolean;
-  has_test?: boolean;
-  is_unlocked?: boolean;
-  created_at?: string;
-  files?: LessonFile[];
+  duration_minutes: number;
+  has_test: boolean;
+  completed: boolean;
+  is_unlocked: boolean; 
 }
 
-export interface LessonFile {
+export interface LessonDetail {
+  id: number;
+  course_id: number;
+  course_title: string;
+  title: string;
+  description: string;
+  video_url: string | null;
+  duration_minutes: number;
+  is_unlocked: boolean;
+  materials: LessonMaterial[];
+}
+
+export interface LessonMaterial {
+  id: number;
+  name: string;
+  file: string;
+  uploaded_at: string;
+}
+
+// Типы для прогресса
+export interface ProgressSummary {
   id: number;
   title: string;
-  description: string;
-  file: string;
-  file_type: string;
-  order: number;
+  total_lessons: number;
+  completed_lessons: number;
 }
 
-// Типы для тестов
+export interface ProgressResponse {
+  summary: ProgressSummary[];
+  detailed: any[];
+}
+
+// Типы для тестов 
 export interface Test {
   id: number;
-  lesson_id: number;
   title: string;
   description: string;
   pass_score: number;
@@ -70,7 +84,7 @@ export interface Question {
   text: string;
   type: 'SINGLE' | 'MULTIPLE' | 'TEXT';
   points: number;
-  answers?: Answer[];
+  answers: Answer[] | null; 
 }
 
 export interface Answer {
@@ -79,10 +93,17 @@ export interface Answer {
   is_correct: boolean;
 }
 
-// Тип для ответа API с пагинацией
-export interface ApiResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
+// Типы для отправки тестов
+export interface TestSubmission {
+  test_id: number;
+  answers: {
+    question_id: number;
+    answer_ids?: number[];
+    text_answer?: string;
+  }[];
+}
+
+export interface TestResult {
+  score: number;
+  passed: boolean;
 }

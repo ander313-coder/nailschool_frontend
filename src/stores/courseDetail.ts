@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type { Course, Lesson } from '@/types/api';
+import type { Course, Lesson, LessonDetail } from '@/types/api';
 import { courseService } from '@/services/courseService';
+import { lessonService } from '@/services/lessonService';
 
 // Интерфейс для прогресса
 interface CourseProgress {
@@ -13,6 +14,7 @@ interface CourseProgress {
 export const useCourseDetailStore = defineStore('courseDetail', () => {
   const course = ref<Course | null>(null);
   const lessons = ref<Lesson[]>([]);
+  const currentLesson = ref<LessonDetail | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const progress = ref<CourseProgress>({
@@ -21,7 +23,7 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
     progress_percent: 0
   });
 
-  // Загрузка деталей курса
+  // Загрузка деталей курса и уроков
   const fetchCourseDetail = async (courseId: number) => {
     isLoading.value = true;
     error.value = null;
@@ -29,81 +31,90 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
     try {
       console.log(`🔄 Loading course details for ID: ${courseId}`);
       
-      // Загружаем только курс и уроки
+      // Загружаем курс и уроки параллельно
       const [courseData, lessonsData] = await Promise.all([
         courseService.getCourse(courseId),
-        courseService.getCourseLessons(courseId)
+        lessonService.getCourseLessons(courseId) // Новый метод!
       ]);
 
       course.value = courseData;
-      lessons.value = lessonsData || [];
+      lessons.value = lessonsData;
 
-      // Вычисляем прогресс на клиенте
-      progress.value = {
-        completed_lessons: lessonsData?.filter(lesson => lesson.is_completed).length || 0,
-        total_lessons: lessonsData?.length || 0,
-        progress_percent: lessonsData?.length ? 
-          Math.round((lessonsData.filter(lesson => lesson.is_completed).length / lessonsData.length) * 100) : 0
-      };
+      // Вычисляем прогресс на основе новых данных
+      updateProgress(lessonsData);
 
       console.log(`✅ Course details loaded:`, {
-        course: courseData?.title || 'Unknown',
-        lessons: lessonsData?.length || 0,
+        course: courseData?.title,
+        lessons: lessonsData.length,
         progress: progress.value.progress_percent
       });
 
     } catch (err: any) {
       error.value = err.response?.data?.detail || `Не удалось загрузить данные курса ${courseId}`;
       console.error(`❌ Error loading course ${courseId}:`, err);
-      
-      useMockData(courseId);
-      error.value = null;
     } finally {
       isLoading.value = false;
     }
   };
 
+  // Загрузка деталей конкретного урока
+  const fetchLessonDetail = async (lessonId: number) => {
+    isLoading.value = true;
+    error.value = null;
 
-  // Заглушки для демонстрации
-  const useMockData = (courseId: number) => {
-  console.log('📋 Using mock data for course details');
-  
-  course.value = {
-    id: courseId,
-    title: 'Базовый курс маникюра',
-    description: 'Основы работы с инструментами и материалами. Изучите базовые техники и принципы ухода за ногтями.',
-    access_level: 'BASIC',
-    course_type: 'VIDEO',
-    lesson_count: 12,
-    duration_minutes: 240,
-    cover_image: '/images/course1.jpg'
-  } as Course; // Явное указание типа
-
-  lessons.value = [
-    {
-      id: 1,
-      course_id: courseId,
-      title: 'Введение в маникюр',
-      description: 'Знакомство с профессией и основными понятиями',
-      duration_minutes: 15,
-      order: 1,
-      is_completed: true,
-      has_test: true,
-      is_unlocked: true
+    try {
+      currentLesson.value = await lessonService.getLessonDetail(lessonId);
+      console.log(`✅ Lesson detail loaded:`, currentLesson.value.title);
+    } catch (err: any) {
+      error.value = 'Ошибка при загрузке урока';
+      console.error('❌ Error loading lesson detail:', err);
+    } finally {
+      isLoading.value = false;
     }
-  ] as Lesson[];
-
-  progress.value = {
-    completed_lessons: 2,
-    total_lessons: lessons.value.length,
-    progress_percent: Math.round((2 / lessons.value.length) * 100)
   };
-};
+
+  // Отметить урок как завершенный
+  const markLessonCompleted = async (lessonId: number) => {
+    try {
+      await lessonService.completeLesson(lessonId);
+      
+      // Обновляем локальное состояние
+      const lesson = lessons.value.find(l => l.id === lessonId);
+      if (lesson) {
+        lesson.completed = true;
+        updateProgress(lessons.value);
+      }
+    } catch (err) {
+      console.error('Error marking lesson completed:', err);
+    }
+  };
+
+  // Обновить прогресс просмотра видео
+  const updateVideoProgress = async (lessonId: number, progress: number) => {
+    try {
+      await lessonService.updateVideoProgress(lessonId, progress);
+    } catch (err) {
+      console.error('Error updating video progress:', err);
+    }
+  };
+
+  // Вспомогательная функция для обновления прогресса
+  const updateProgress = (lessonsData: Lesson[]) => {
+    const completedLessons = lessonsData.filter(lesson => lesson.completed).length;
+    const totalLessons = lessonsData.length;
+    
+    progress.value = {
+      completed_lessons: completedLessons,
+      total_lessons: totalLessons,
+      progress_percent: totalLessons ? Math.round((completedLessons / totalLessons) * 100) : 0
+    };
+  };
 
   // Сброс состояния
   const reset = () => {
     course.value = null;
     lessons.value = [];
+    currentLesson.value = null;
     progress.value = {
       completed_lessons: 0,
       total_lessons: 0,
@@ -115,10 +126,14 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
   return {
     course,
     lessons,
+    currentLesson,
     progress,
     isLoading,
     error,
     fetchCourseDetail,
+    fetchLessonDetail,
+    markLessonCompleted,
+    updateVideoProgress,
     reset
   };
 });

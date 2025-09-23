@@ -1,5 +1,5 @@
 import apiClient from '@/api/client';
-import type { Course, Lesson, ApiResponse } from '@/types/api';
+import type { Course, Lesson } from '@/types/api';
 
 export const courseService = {
   // Получить все курсы

@@ -34,7 +34,7 @@
           <div class="course-info">
             <h1>{{ course.title }}</h1>
             <p class="course-description">{{ course.description }}</p>
-            
+        
             <div class="course-meta">
               <div class="meta-item">
                 <span class="meta-icon">📚</span>
@@ -82,15 +82,14 @@
             :key="lesson.id" 
             class="lesson-item"
             :class="{
-              'completed': lesson.is_completed,
-              'current': !lesson.is_completed && lesson.is_unlocked,
+              'completed': lesson.completed,
+              'current': !lesson.completed && lesson.is_unlocked,
               'locked': !lesson.is_unlocked
             }"
           >
             <div class="lesson-info">
               <div class="lesson-number">Урок {{ lesson.order }}</div>
               <h3 class="lesson-title">{{ lesson.title }}</h3>
-              <p class="lesson-description">{{ lesson.description }}</p>
               <div class="lesson-meta">
                 <span class="lesson-duration">{{ lesson.duration_minutes }} минут</span>
                 <span v-if="lesson.has_test" class="lesson-test">📝 Тест</span>
@@ -98,18 +97,18 @@
             </div>
             
             <div class="lesson-actions">
-              <span v-if="lesson.is_completed" class="lesson-status completed">✅ Завершено</span>
+              <span v-if="lesson.completed" class="lesson-status completed">✅ Завершено</span>
               <span v-else-if="!lesson.is_unlocked" class="lesson-status locked">🔒 Заблокировано</span>
               <span v-else-if="lesson.has_test" class="lesson-status test">📝 Тест</span>
               <span v-else class="lesson-status pending">⏳ Ожидает</span>
               
               <router-link 
-                v-if="lesson.is_unlocked"
-                :to="`/lessons/${lesson.id}`"
+                v-if="lesson.is_unlocked || lesson.completed"
+                :to="`/course/${courseId}/lesson/${lesson.id}`"
                 class="lesson-button"
-                :class="lesson.is_completed ? 'review' : 'start'"
+                :class="lesson.completed ? 'review' : 'start'"
               >
-                {{ lesson.is_completed ? 'Повторить' : 'Начать' }}
+                {{ lesson.completed ? 'Повторить' : 'Начать' }}
               </router-link>
             </div>
           </div>
@@ -144,15 +143,18 @@
 import { computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCourseDetailStore } from '@/stores/courseDetail';
+import { storeToRefs } from 'pinia';
 
 const route = useRoute();
 const router = useRouter();
 const courseDetailStore = useCourseDetailStore();
 
-// Используем storeToRefs для правильной реактивности
-import { storeToRefs } from 'pinia';
-
 const { course, lessons, progress, isLoading, error } = storeToRefs(courseDetailStore);
+
+const courseId = computed(() => {
+  const id = route.params.id;
+  return id ? parseInt(id as string) : 0;
+});
 
 // Загрузка данных
 onMounted(() => {
@@ -169,16 +171,13 @@ watch(
 );
 
 const loadCourseData = () => {
-  const courseId = parseInt(route.params.id as string);
-  if (courseId) {
-    courseDetailStore.fetchCourseDetail(courseId);
+  if (courseId.value) {
+    courseDetailStore.fetchCourseDetail(courseId.value);
   }
 };
 
-// ВЫЧИСЛЯЕМЫЕ СВОЙСТВА С БЕЗОПАСНЫМ ДОСТУПОМ
-
+// ВЫЧИСЛЯЕМЫЕ СВОЙСТВА 
 const courseLevel = computed(() => {
-  // Безопасный доступ к course.value
   const currentCourse = course.value;
   if (!currentCourse) return 'Начальный';
   
@@ -214,7 +213,7 @@ const nextLesson = computed(() => {
   if (!lessonList || lessonList.length === 0) return null;
   
   return lessonList.find(lesson => {
-    return !lesson.is_completed && lesson.is_unlocked !== false;
+    return !lesson.completed && lesson.is_unlocked !== false;
   }) || null;
 });
 
@@ -224,11 +223,11 @@ const continueButtonText = computed(() => {
   return `Продолжить: ${lesson.title || 'Следующий урок'}`;
 });
 
-// Методы
+// Методы 
 const continueLearning = () => {
   const lesson = nextLesson.value;
-  if (lesson?.id) {
-    router.push(`/lessons/${lesson.id}`);
+  if (lesson?.id && courseId.value) {
+    router.push(`/course/${courseId.value}/lesson/${lesson.id}`);
   }
 };
 </script>

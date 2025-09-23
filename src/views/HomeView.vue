@@ -29,7 +29,7 @@
             <iframe 
                 width="100%" 
                 height="300" 
-                src="https://play.boomstream.com/sXuALQMy?color=%23ffffff&title=0&size=cover&volume=20"
+                src="https://play.boomstream.com/8h0ssWjf?color=false&volume=20&title=0"
                 frameborder="0" 
                 allowfullscreen>
             </iframe>
