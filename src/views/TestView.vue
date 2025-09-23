@@ -138,86 +138,55 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useTestStore } from '@/stores/testStore';
 import { useProgressStore } from '@/stores/progress';
+import type { TestSubmission } from '@/types/api';
 
 const route = useRoute();
 const router = useRouter();
+const testStore = useTestStore();
+const progressStore = useProgressStore();
 
-const test = ref<any>(null);
-const questions = ref<any[]>([]);
 const currentQuestionIndex = ref(0);
 const textAnswer = ref('');
 const userAnswers = ref<Record<number, any>>({});
-const progressStore = useProgressStore();
 
-// Используем ref для массива, но будем работать с ним правильно
+// Используем ref для массива выбранных ответов
 const selectedAnswers = ref<(number | string)[]>([]);
 
-// Заглушки данных
+// Загружаем реальные данные теста
 onMounted(() => {
   loadTestData();
 });
 
-const loadTestData = () => {
-  setTimeout(() => {
-    test.value = {
-      id: route.params.id,
-      title: 'Тест по основам маникюра',
-      description: 'Проверьте свои знания основных принципов и техник маникюра',
-      pass_score: 70
-    };
-
-    questions.value = [
-      {
-        id: 1,
-        text: 'Какой инструмент используется для удаления кутикулы?',
-        type: 'SINGLE',
-        points: 10,
-        answers: [
-          { id: 1, text: 'Пушер', is_correct: true },
-          { id: 2, text: 'Ножницы', is_correct: false },
-          { id: 3, text: 'Пилка', is_correct: false },
-          { id: 4, text: 'Кисть', is_correct: false }
-        ]
-      },
-      {
-        id: 2,
-        text: 'Какие этапы включает подготовка ногтей к маникюру?',
-        type: 'MULTIPLE',
-        points: 15,
-        answers: [
-          { id: 5, text: 'Обезжиривание', is_correct: true },
-          { id: 6, text: 'Шлифовка', is_correct: true },
-          { id: 7, text: 'Покраска', is_correct: false },
-          { id: 8, text: 'Удаление кутикулы', is_correct: true }
-        ]
-      },
-      {
-        id: 3,
-        text: 'Опишите правильную технику нанесения базового покрытия',
-        type: 'TEXT',
-        points: 20,
-        answers: []
-      }
-    ];
-
+const loadTestData = async () => {
+  const testId = Number(route.params.id);
+  if (testId) {
+    await testStore.fetchTest(testId);
+    
     // Инициализируем ответы пользователя
-    questions.value.forEach((q) => {
-      userAnswers.value[q.id] = q.type === 'TEXT' ? '' : [];
-    });
-  }, 500);
+    if (testStore.currentTest) {
+      testStore.currentTest.questions.forEach((q) => {
+        userAnswers.value[q.id] = q.type === 'TEXT' ? '' : [];
+      });
+    }
+  }
 };
 
 // Вычисляемые свойства
 const courseId = computed(() => route.params.courseId || '1');
 const lessonId = computed(() => route.params.lessonId || '1');
 
+const test = computed(() => testStore.currentTest);
+const questions = computed(() => testStore.currentTest?.questions || []);
+const isLoading = computed(() => testStore.isLoading);
+
 const currentQuestion = computed(() => {
   return questions.value[currentQuestionIndex.value];
 });
 
 const progress = computed(() => {
-  return Math.round(((currentQuestionIndex.value + 1) / questions.value.length) * 100);
+  return questions.value.length ? Math.round(((currentQuestionIndex.value + 1) / questions.value.length) * 100) : 0;
 });
 
 const canProceed = computed(() => {
@@ -233,6 +202,8 @@ const canProceed = computed(() => {
 
 // Методы
 const saveAnswer = () => {
+  if (!currentQuestion.value) return;
+  
   const questionId = currentQuestion.value.id;
   if (currentQuestion.value.type === 'TEXT') {
     userAnswers.value[questionId] = textAnswer.value;
@@ -254,6 +225,8 @@ const prevQuestion = () => {
 };
 
 const resetAnswerUI = () => {
+  if (!currentQuestion.value) return;
+  
   const questionId = currentQuestion.value.id;
   const savedAnswer = userAnswers.value[questionId];
   
@@ -282,23 +255,56 @@ const isSelected = (answerId: number) => {
   return selectedAnswers.value.includes(answerId);
 };
 
-const submitTest = () => {
-  saveAnswer();
-    // Отмечаем тест как завершенный
-  progressStore.completeTest(test.value.id);
-
-  // Здесь будет логика отправки теста на сервер
-  console.log('Ответы пользователя:', userAnswers.value);
+const submitTest = async () => {
+  if (!test.value) return;
   
-  // Переход на страницу результатов
-  router.push({
-    name: 'test-results',
-    params: { id: test.value.id },
-    query: { 
-      score: 85, // Заглушка
-      total: questions.value.reduce((sum, q) => sum + q.points, 0)
-    }
-  });
+  saveAnswer();
+
+  // Подготавливаем данные для отправки
+  const submission: TestSubmission = {
+    test_id: test.value.id,
+    answers: Object.entries(userAnswers.value).map(([questionId, answer]) => {
+      const question = questions.value.find(q => q.id === parseInt(questionId));
+      if (!question) return null;
+
+      if (question.type === 'TEXT') {
+        return {
+          question_id: parseInt(questionId),
+          text_answer: answer as string
+        };
+      } else {
+        return {
+          question_id: parseInt(questionId),
+          answer_ids: answer as number[]
+        };
+      }
+    }).filter(Boolean) as any
+  };
+
+  try {
+    // Отправляем тест на сервер
+    const result = await testStore.submitTest(submission);
+    
+    // Отмечаем тест как завершенный в прогрессе
+    progressStore.completeTest(test.value.id);
+
+    // Переход на страницу результатов
+    router.push({
+      name: 'test-results',
+      params: { 
+        courseId: courseId.value,
+        lessonId: lessonId.value,
+        id: test.value.id 
+      },
+      query: { 
+        score: result.score,
+        passed: result.passed ? 'true' : 'false'
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при отправке теста:', error);
+    // Можно добавить уведомление об ошибке
+  }
 };
 </script>
 

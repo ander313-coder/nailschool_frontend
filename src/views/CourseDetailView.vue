@@ -98,12 +98,12 @@
             
             <div class="lesson-actions">
               <span v-if="lesson.completed" class="lesson-status completed">✅ Завершено</span>
-              <span v-else-if="!lesson.is_unlocked" class="lesson-status locked">🔒 Заблокировано</span>
+              <span v-else-if="!lesson.is_unlocked && !lesson.completed && !isFirstLesson(lesson)" class="lesson-status locked">🔒 Заблокировано</span>
               <span v-else-if="lesson.has_test" class="lesson-status test">📝 Тест</span>
               <span v-else class="lesson-status pending">⏳ Ожидает</span>
               
               <router-link 
-                v-if="lesson.is_unlocked || lesson.completed"
+                v-if="lesson.is_unlocked || lesson.completed || isFirstLesson(lesson)"
                 :to="`/course/${courseId}/lesson/${lesson.id}`"
                 class="lesson-button"
                 :class="lesson.completed ? 'review' : 'start'"
@@ -151,10 +151,17 @@ const courseDetailStore = useCourseDetailStore();
 
 const { course, lessons, progress, isLoading, error } = storeToRefs(courseDetailStore);
 
+// Добавляем вычисление courseId
 const courseId = computed(() => {
   const id = route.params.id;
   return id ? parseInt(id as string) : 0;
 });
+
+// НОВЫЙ МЕТОД: проверяем является ли урок первым в курсе
+const isFirstLesson = (lesson: any) => {
+  const sorted = [...lessons.value].sort((a, b) => a.order - b.order);
+  return sorted.length > 0 && lesson.id === sorted[0].id;
+};
 
 // Загрузка данных
 onMounted(() => {

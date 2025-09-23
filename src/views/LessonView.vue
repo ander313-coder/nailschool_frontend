@@ -2,7 +2,9 @@
   <div class="lesson-view" v-if="!isLoading && !error">
     <!-- Хлебные крошки -->
     <nav class="breadcrumbs" v-if="lessonDetail">
-      <router-link :to="`/course/${lessonDetail.course_id}`">
+      <router-link to="/my-courses">Мои курсы</router-link>
+      <span class="separator">/</span>
+      <router-link :to="`/courses/${lessonDetail.course_id}`">
         {{ lessonDetail.course_title }}
       </router-link>
       <span class="separator">/</span>
@@ -19,10 +21,10 @@
     </div>
 
     <!-- Видео плеер -->
-    <div class="video-section" v-if="lessonDetail?.video_url">
+    <div class="video-section" v-if="hasVideo">
       <video 
         ref="videoPlayer"
-        :src="lessonDetail.video_url" 
+        :src="getVideoSource(lessonDetail!.video_url)!" 
         controls
         class="video-player"
         @ended="handleVideoEnd"
@@ -33,8 +35,15 @@
     </div>
 
     <!-- Сообщение если видео нет -->
-    <div v-else class="no-video">
-      <p>Видео материал для этого урока пока не доступен.</p>
+    <div v-else-if="lessonDetail" class="no-video">
+      <div class="no-video-content">
+        <div class="no-video-icon">🎬</div>
+        <h3>Видео материал готовится</h3>
+        <p>Видео для этого урока будет доступно в ближайшее время.</p>
+        <div class="lesson-content-placeholder">
+          <p>Содержание урока: {{ lessonDetail.description || 'Информация будет добавлена' }}</p>
+        </div>
+      </div>
     </div>
 
     <!-- Описание урока -->
@@ -140,6 +149,26 @@ const lesson = computed(() =>
   lessons.value.find(l => l.id === lessonId.value)
 );
 
+// Временный метод для тестирования видео
+const getVideoSource = (videoUrl: string | null): string | null => {
+  // Если есть настоящее видео - используем его
+  if (videoUrl) {
+    return videoUrl;
+  }
+  
+  // Для демонстрации всегда возвращаем тестовое видео
+  // Закомментируйте следующую строку чтобы показывать заглушку
+  return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+  
+  // Или возвращаем null чтобы показать заглушку
+  // return null;
+};
+
+// Проверяем есть ли видео для отображения
+const hasVideo = computed(() => {
+  return lessonDetail.value && getVideoSource(lessonDetail.value.video_url) !== null;
+});
+
 // Загрузка данных урока
 const loadLessonData = async () => {
   await courseDetailStore.fetchLessonDetail(lessonId.value);
@@ -167,7 +196,7 @@ const handleTimeUpdate = () => {
   }
 };
 
-// Навигация - ИСПРАВЛЕННАЯ ЧАСТЬ
+// Навигация
 const goToLesson = (lessonId: number) => {
   router.push(`/course/${courseId.value}/lesson/${lessonId}`);
 };
@@ -191,7 +220,7 @@ const goToTest = () => {
 };
 
 const goToCourse = () => {
-  router.push(`/course/${courseId.value}`);
+  router.push(`/courses/${courseId.value}`);
 };
 
 const retryLoading = () => {
@@ -262,11 +291,40 @@ const formatDate = (dateString: string) => {
 }
 
 .no-video {
-  background: #f5f5f5;
-  padding: 40px;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+  padding: 3rem 2rem;
   text-align: center;
+  margin-bottom: 2rem;
+}
+
+.no-video-content {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.no-video-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.no-video h3 {
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
+
+.no-video p {
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+.lesson-content-placeholder {
+  background: white;
+  padding: 1.5rem;
   border-radius: 8px;
-  margin-bottom: 30px;
+  margin-top: 1.5rem;
+  border-left: 4px solid #8C4CC3;
 }
 
 .lesson-description {

@@ -31,7 +31,10 @@
         </div>
 
         <div class="results-actions">
-          <router-link :to="`/lessons/${lessonId}`" class="action-btn">
+          <router-link 
+            :to="`/course/${courseId}/lesson/${lessonId}`" 
+            class="action-btn"
+          >
             ← Вернуться к уроку
           </router-link>
           <router-link to="/dashboard" class="action-btn primary">
@@ -47,21 +50,55 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useTestStore } from '@/stores/testStore';
 
 const route = useRoute();
+const router = useRouter();
+const testStore = useTestStore();
 
-// Заглушки данных - потом заменим на реальные
-const score = computed(() => parseInt(route.query.score as string) || 85);
-const totalQuestions = computed(() => 5);
-const correctAnswers = computed(() => 4);
-const earnedPoints = computed(() => 45);
-const totalPoints = computed(() => 50);
-const passScore = computed(() => 70);
-const lessonId = computed(() => '1');
+// Используем реальные данные из хранилища
+const testResult = computed(() => testStore.results);
+const test = computed(() => testStore.currentTest);
 
-const isPassed = computed(() => score.value >= passScore.value);
+// Параметры из URL или из результатов теста
+const score = computed(() => {
+  return testResult.value?.score || parseInt(route.query.score as string) || 0;
+});
+
+const isPassed = computed(() => {
+  return testResult.value?.passed || route.query.passed === 'true';
+});
+
+const passScore = computed(() => {
+  return test.value?.pass_score || 70;
+});
+
+const lessonId = computed(() => route.params.lessonId || '1');
+const courseId = computed(() => route.params.courseId || '1');
+
+const totalQuestions = computed(() => {
+  return test.value?.questions.length || 0;
+});
+
+const correctAnswers = computed(() => {
+  // Это упрощенная логика - в реальности нужно считать правильные ответы
+  if (!testResult.value) return 0;
+  return Math.round((score.value / 100) * totalQuestions.value);
+});
+
+const earnedPoints = computed(() => {
+  // Это упрощенная логика
+  if (!test.value) return 0;
+  const totalPoints = test.value.questions.reduce((sum, q) => sum + q.points, 0);
+  return Math.round((score.value / 100) * totalPoints);
+});
+
+const totalPoints = computed(() => {
+  if (!test.value) return 0;
+  return test.value.questions.reduce((sum, q) => sum + q.points, 0);
+});
 
 const scoreClass = computed(() => {
   if (score.value >= 90) return 'excellent';
@@ -76,8 +113,16 @@ const resultMessage = computed(() => {
 });
 
 const retryTest = () => {
-  // Логика повторения теста
-  window.location.reload();
+  // Сброс теста и возврат к началу
+  testStore.resetTest();
+  router.push({
+    name: 'lesson-test',
+    params: {
+      courseId: courseId.value,
+      lessonId: lessonId.value,
+      id: test.value?.id
+    }
+  });
 };
 </script>
 
