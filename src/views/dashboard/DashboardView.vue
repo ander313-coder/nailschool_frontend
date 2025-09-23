@@ -21,26 +21,54 @@
       <!-- Компонент с курсами -->
       <UserCourses />
     </template>
+        <!-- Временная кнопка для тестирования -->
+    <div class="debug-section">
+      <button @click="testAPI" class="debug-btn">Test API Endpoints</button>
+      <div v-if="apiTestResult" class="api-result">
+        <pre>{{ apiTestResult }}</pre>
+      </div>
+    </div>
   </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import DashboardLayout from './DashboardLayout.vue';
 import DashboardStatus from '@/components/dashboard/DashboardStatus.vue';
 import UserCourses from '@/components/dashboard/UserCourses.vue';
 import StatsCards from '@/components/dashboard/StatsCards.vue';
 import { useCoursesStore } from '@/stores/courses';
 
+// тестирование API
+import { testEndpoints } from '@/utils/apiTester';
 
 const coursesStore = useCoursesStore();
+const apiTestResult = ref<string>('');
+const localLoading = ref(true); // Локальное состояние загрузки
+
+// Используем вычисляемые свойства для синхронизации состояний
+const isLoading = computed(() => coursesStore.isLoading || localLoading.value);
+const error = computed(() => coursesStore.error);
+
+const testAPI = async () => {
+  apiTestResult.value = 'Testing...';
+  await testEndpoints();
+  apiTestResult.value = 'Check browser console for results';
+};
 
 onMounted(() => {
   loadData();
 });
 
 const loadData = async () => {
-  await coursesStore.fetchUserCourses();
+  localLoading.value = true;
+  try {
+    await coursesStore.fetchUserCourses();
+  } catch (error) {
+    console.error('Error loading dashboard data:', error);
+  } finally {
+    localLoading.value = false;
+  }
 };
 </script>
 
@@ -133,6 +161,35 @@ const loadData = async () => {
 
 .retry-button:hover {
   background: #7b3fb3;
+}
+
+.debug-section {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.debug-btn {
+  background: #666;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.debug-btn:hover {
+  background: #555;
+}
+
+.api-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9rem;
 }
 
 /* Адаптивность */

@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { useCoursesStore } from '@/stores/courses';
 import { storeToRefs } from 'pinia';
-import { onMounted, computed } from 'vue';
+import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
@@ -63,11 +63,6 @@ const { fetchUserCourses } = coursesStore;
 // Определяем, находится ли компонент на отдельной странице
 const isStandalonePage = computed(() => {
   return route.path === '/my-courses';
-});
-
-// Загружаем курсы при монтировании компонента
-onMounted(() => {
-  fetchCourses();
 });
 
 const fetchCourses = () => {
