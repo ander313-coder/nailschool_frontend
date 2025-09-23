@@ -11,9 +11,6 @@ export interface User {
   avatar?: string;
   progress?: number;
   next_role_display?: string | null;
-  // Старые поля для обратной совместимости
-  name?: string;          
-  level?: string;         
 }
 
 // Типы для курсов
@@ -21,10 +18,15 @@ export interface Course {
   id: number;
   title: string;
   description: string;
-  access_level: string;
-  course_type: string;
+  short_description?: string;
+  access_level: 'BASIC' | 'ADVANCED' | 'ALL';
+  course_type: 'VIDEO' | 'TEXT' | 'MIXED';
   cover_image?: string;
   lesson_count?: number;
+  duration_minutes?: number;
+  instructors?: User[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Типы для уроков
@@ -33,11 +35,24 @@ export interface Lesson {
   course_id: number;
   title: string;
   description: string;
+  short_description?: string;
   video_url?: string;
   duration_minutes: number;
   order: number;
-  is_completed: boolean;
-  has_test: boolean;
+  is_completed?: boolean;
+  has_test?: boolean;
+  is_unlocked?: boolean;
+  created_at?: string;
+  files?: LessonFile[];
+}
+
+export interface LessonFile {
+  id: number;
+  title: string;
+  description: string;
+  file: string;
+  file_type: string;
+  order: number;
 }
 
 // Типы для тестов
@@ -62,4 +77,12 @@ export interface Answer {
   id: number;
   text: string;
   is_correct: boolean;
+}
+
+// Тип для ответа API с пагинацией
+export interface ApiResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
 }

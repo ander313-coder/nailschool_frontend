@@ -6,164 +6,230 @@
       <span class="breadcrumb-separator">/</span>
       <router-link to="/my-courses" class="breadcrumb-link">Мои курсы</router-link>
       <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-current">{{ course?.title }}</span>
+      <span class="breadcrumb-current">{{ course?.title || 'Загрузка...' }}</span>
     </nav>
 
-    <!-- Заголовок курса -->
-    <div class="course-header">
-      <div class="course-hero">
-        <h1>{{ course?.title }}</h1>
-        <p class="course-description">{{ course?.description }}</p>
-        
-        <div class="course-meta">
-          <div class="meta-item">
-            <span class="meta-icon">📚</span>
-            <span>{{ course?.lesson_count || 0 }} уроков</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-icon">⏱️</span>
-            <span>~{{ totalDuration }} минут</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-icon">🎯</span>
-            <span class="course-level">{{ courseLevel }}</span>
-          </div>
-        </div>
-
-        <div class="progress-container">
-          <div class="progress-header">
-            <span>Прогресс курса</span>
-            <span>{{ courseProgress }}%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: courseProgress + '%' }"></div>
-          </div>
-        </div>
-      </div>
+    <!-- Состояние загрузки -->
+    <div v-if="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Загрузка курса...</p>
     </div>
 
-    <!-- Содержание курса -->
-    <div class="course-content">
-      <div class="content-header">
-        <h2>Содержание курса</h2>
-        <div class="content-stats">
-          <span>{{ completedLessons }}/{{ totalLessons }} уроков завершено</span>
-        </div>
-      </div>
+    <!-- Состояние ошибки -->
+    <div v-else-if="error" class="error-state">
+      <h3>Ошибка загрузки</h3>
+      <p>{{ error }}</p>
+      <button @click="loadCourseData" class="retry-button">Попробовать снова</button>
+      <router-link to="/my-courses" class="back-link">← Вернуться к курсам</router-link>
+    </div>
 
-      <div class="lessons-list">
-        <div v-for="lesson in lessons" :key="lesson.id" class="lesson-item">
-          <div class="lesson-info">
-            <div class="lesson-number">Урок {{ lesson.order }}</div>
-            <h3 class="lesson-title">{{ lesson.title }}</h3>
-            <p class="lesson-duration">{{ lesson.duration_minutes }} минут</p>
+    <!-- Основной контент (показываем только если course существует) -->
+    <div v-else-if="course">
+      <!-- Заголовок курса -->
+      <div class="course-header">
+        <div class="course-hero">
+          <div class="course-cover" v-if="course.cover_image">
+            <img :src="course.cover_image" :alt="course.title" />
           </div>
-          
-          <div class="lesson-actions">
-            <span v-if="lesson.is_completed" class="lesson-status completed">✅ Завершено</span>
-            <span v-else-if="lesson.has_test" class="lesson-status test">📝 Тест</span>
-            <span v-else class="lesson-status pending">⏳ Ожидает</span>
+          <div class="course-info">
+            <h1>{{ course.title }}</h1>
+            <p class="course-description">{{ course.description }}</p>
             
-            <router-link 
-              v-if="!lesson.is_completed"
-              :to="`/lessons/${lesson.id}`"
-              class="start-button"
-            >
-              Начать
-            </router-link>
-            <router-link 
-              v-else
-              :to="`/lessons/${lesson.id}`"
-              class="review-button"
-            >
-              Повторить
-            </router-link>
+            <div class="course-meta">
+              <div class="meta-item">
+                <span class="meta-icon">📚</span>
+                <span>{{ lessons.length }} уроков</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">⏱️</span>
+                <span>{{ totalDuration }} минут</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">🎯</span>
+                <span class="course-level">{{ courseLevel }}</span>
+              </div>
+            </div>
+
+            <!-- Прогресс курса -->
+            <div class="progress-container">
+              <div class="progress-header">
+                <span>Прогресс курса</span>
+                <span>{{ progress.progress_percent }}%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: progress.progress_percent + '%' }"></div>
+              </div>
+              <div class="progress-stats">
+                {{ progress.completed_lessons }}/{{ progress.total_lessons }} уроков завершено
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Содержание курса -->
+      <div class="course-content">
+        <div class="content-header">
+          <h2>Содержание курса</h2>
+          <div class="content-stats">
+            <span>{{ progress.completed_lessons }}/{{ progress.total_lessons }} уроков завершено</span>
+          </div>
+        </div>
+
+        <div class="lessons-list">
+          <div 
+            v-for="lesson in sortedLessons" 
+            :key="lesson.id" 
+            class="lesson-item"
+            :class="{
+              'completed': lesson.is_completed,
+              'current': !lesson.is_completed && lesson.is_unlocked,
+              'locked': !lesson.is_unlocked
+            }"
+          >
+            <div class="lesson-info">
+              <div class="lesson-number">Урок {{ lesson.order }}</div>
+              <h3 class="lesson-title">{{ lesson.title }}</h3>
+              <p class="lesson-description">{{ lesson.description }}</p>
+              <div class="lesson-meta">
+                <span class="lesson-duration">{{ lesson.duration_minutes }} минут</span>
+                <span v-if="lesson.has_test" class="lesson-test">📝 Тест</span>
+              </div>
+            </div>
+            
+            <div class="lesson-actions">
+              <span v-if="lesson.is_completed" class="lesson-status completed">✅ Завершено</span>
+              <span v-else-if="!lesson.is_unlocked" class="lesson-status locked">🔒 Заблокировано</span>
+              <span v-else-if="lesson.has_test" class="lesson-status test">📝 Тест</span>
+              <span v-else class="lesson-status pending">⏳ Ожидает</span>
+              
+              <router-link 
+                v-if="lesson.is_unlocked"
+                :to="`/lessons/${lesson.id}`"
+                class="lesson-button"
+                :class="lesson.is_completed ? 'review' : 'start'"
+              >
+                {{ lesson.is_completed ? 'Повторить' : 'Начать' }}
+              </router-link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Действия с курсом -->
+      <div class="course-actions">
+        <button 
+          class="action-btn primary" 
+          @click="continueLearning"
+          :disabled="!nextLesson"
+        >
+          {{ continueButtonText }}
+        </button>
+        <router-link to="/my-courses" class="action-btn secondary">
+          ← Назад к курсам
+        </router-link>
+      </div>
     </div>
 
-    <!-- Действия с курсом -->
-    <div class="course-actions">
-      <button class="action-btn primary" @click="continueLearning">
-        {{ continueButtonText }}
-      </button>
-      <button class="action-btn secondary" @click="goBack">
-        ← Назад к курсам
-      </button>
+    <!-- Состояние когда курс не найден -->
+    <div v-else class="not-found-state">
+      <h3>Курс не найден</h3>
+      <p>Запрошенный курс не существует или у вас нет к нему доступа.</p>
+      <router-link to="/my-courses" class="back-link">← Вернуться к курсам</router-link>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useCourseDetailStore } from '@/stores/courseDetail';
 
 const route = useRoute();
 const router = useRouter();
-const course = ref<any>(null);
-const lessons = ref<any[]>([]);
-const isLoading = ref(true);
+const courseDetailStore = useCourseDetailStore();
 
-// Заглушки данных - потом заменим на реальные API вызовы
+// Используем storeToRefs для правильной реактивности
+import { storeToRefs } from 'pinia';
+
+const { course, lessons, progress, isLoading, error } = storeToRefs(courseDetailStore);
+
+// Загрузка данных
 onMounted(() => {
-  setTimeout(() => {
-    course.value = {
-      id: route.params.id,
-      title: 'Базовый курс маникюра',
-      description: 'Основы работы с инструментами и материалами. Изучите базовые техники и принципы ухода за ногтями.',
-      lesson_count: 12,
-      access_level: 'BASIC'
-    };
-
-    lessons.value = [
-      { id: 1, order: 1, title: 'Введение в маникюр', duration_minutes: 15, is_completed: true, has_test: true },
-      { id: 2, order: 2, title: 'Инструменты и материалы', duration_minutes: 20, is_completed: true, has_test: true },
-      { id: 3, order: 3, title: 'Подготовка ногтей', duration_minutes: 25, is_completed: false, has_test: false },
-      { id: 4, order: 4, title: 'Основы покрытия', duration_minutes: 30, is_completed: false, has_test: true },
-      { id: 5, order: 5, title: 'Дизайн ногтей', duration_minutes: 35, is_completed: false, has_test: false }
-    ];
-
-    isLoading.value = false;
-  }, 500);
+  loadCourseData();
 });
 
-// Вычисляемые свойства
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      loadCourseData();
+    }
+  }
+);
+
+const loadCourseData = () => {
+  const courseId = parseInt(route.params.id as string);
+  if (courseId) {
+    courseDetailStore.fetchCourseDetail(courseId);
+  }
+};
+
+// ВЫЧИСЛЯЕМЫЕ СВОЙСТВА С БЕЗОПАСНЫМ ДОСТУПОМ
+
 const courseLevel = computed(() => {
+  // Безопасный доступ к course.value
+  const currentCourse = course.value;
+  if (!currentCourse) return 'Начальный';
+  
   const levels: Record<string, string> = {
     'BASIC': 'Начальный',
     'ADVANCED': 'Продвинутый',
     'ALL': 'Все уровни'
   };
-  return levels[course.value?.access_level] || course.value?.access_level;
-});
-
-const totalLessons = computed(() => lessons.value.length);
-const completedLessons = computed(() => lessons.value.filter(l => l.is_completed).length);
-const courseProgress = computed(() => {
-  if (totalLessons.value === 0) return 0;
-  return Math.round((completedLessons.value / totalLessons.value) * 100);
+  
+  return levels[currentCourse.access_level] || 'Начальный';
 });
 
 const totalDuration = computed(() => {
-  return lessons.value.reduce((total, lesson) => total + lesson.duration_minutes, 0);
+  const lessonList = lessons.value;
+  if (!lessonList || lessonList.length === 0) return 0;
+  
+  return lessonList.reduce((total, lesson) => {
+    return total + (lesson.duration_minutes || 0);
+  }, 0);
+});
+
+const sortedLessons = computed(() => {
+  const lessonList = lessons.value;
+  if (!lessonList || lessonList.length === 0) return [];
+  
+  return [...lessonList].sort((a, b) => {
+    return (a.order || 0) - (b.order || 0);
+  });
+});
+
+const nextLesson = computed(() => {
+  const lessonList = sortedLessons.value;
+  if (!lessonList || lessonList.length === 0) return null;
+  
+  return lessonList.find(lesson => {
+    return !lesson.is_completed && lesson.is_unlocked !== false;
+  }) || null;
 });
 
 const continueButtonText = computed(() => {
-  const nextLesson = lessons.value.find(lesson => !lesson.is_completed);
-  return nextLesson ? `Продолжить: ${nextLesson.title}` : 'Курс завершен';
+  const lesson = nextLesson.value;
+  if (!lesson) return 'Курс завершен 🎉';
+  return `Продолжить: ${lesson.title || 'Следующий урок'}`;
 });
 
 // Методы
 const continueLearning = () => {
-  const nextLesson = lessons.value.find(lesson => !lesson.is_completed);
-  if (nextLesson) {
-    router.push(`/lessons/${nextLesson.id}`);
+  const lesson = nextLesson.value;
+  if (lesson?.id) {
+    router.push(`/lessons/${lesson.id}`);
   }
-};
-
-const goBack = () => {
-  router.push('/my-courses');
 };
 </script>
 
@@ -193,7 +259,7 @@ const goBack = () => {
 }
 
 .breadcrumb-separator {
-  color: var(--text-secondary);
+  opacity: 0.6;
 }
 
 .breadcrumb-current {
@@ -201,25 +267,84 @@ const goBack = () => {
   font-weight: 500;
 }
 
+/* Состояния загрузки и ошибки */
+.loading-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--gray-200);
+  border-left: 4px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--error-light);
+  border-radius: 12px;
+  color: var(--error);
+}
+
+.error-state h3 {
+  margin-bottom: 1rem;
+}
+
+.retry-button {
+  background: var(--error);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  margin: 1rem 0.5rem;
+  cursor: pointer;
+}
+
+.back-link {
+  color: var(--error);
+  text-decoration: none;
+  margin: 1rem 0.5rem;
+  display: inline-block;
+}
+
 /* Заголовок курса */
-.course-header {
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-  border-radius: 16px;
-  padding: 2rem;
+.course-hero {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
   margin-bottom: 2rem;
 }
 
-.course-hero h1 {
+.course-cover img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+}
+
+.course-info h1 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--text-primary);
   margin-bottom: 1rem;
+  color: var(--text-primary);
 }
 
 .course-description {
   font-size: 1.1rem;
-  color: var(--text-secondary);
   line-height: 1.6;
+  color: var(--text-secondary);
   margin-bottom: 2rem;
 }
 
@@ -234,10 +359,6 @@ const goBack = () => {
   align-items: center;
   gap: 0.5rem;
   color: var(--text-secondary);
-}
-
-.meta-icon {
-  font-size: 1.2rem;
 }
 
 .course-level {
@@ -267,9 +388,10 @@ const goBack = () => {
 
 .progress-bar {
   height: 8px;
-  background: var(--gray-100);
+  background: var(--gray-200);
   border-radius: 4px;
   overflow: hidden;
+  margin-bottom: 0.5rem;
 }
 
 .progress-fill {
@@ -279,27 +401,32 @@ const goBack = () => {
   transition: width 0.3s ease;
 }
 
+.progress-stats {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
 /* Содержание курса */
 .course-content {
-  margin-bottom: 2rem;
+  margin-top: 3rem;
 }
 
 .content-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .content-header h2 {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .content-stats {
   color: var(--text-secondary);
-  font-size: 0.9rem;
 }
 
 /* Список уроков */
@@ -313,11 +440,28 @@ const goBack = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
   padding: 1.5rem;
+  background: white;
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
   border-left: 4px solid var(--primary);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lesson-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.lesson-item.completed {
+  border-left-color: #2e7d32;
+  background: #f8f9fa;
+}
+
+.lesson-item.locked {
+  border-left-color: var(--gray-400);
+  background: var(--gray-50);
+  opacity: 0.7;
 }
 
 .lesson-info {
@@ -333,12 +477,21 @@ const goBack = () => {
 .lesson-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-primary);
   margin-bottom: 0.5rem;
+  color: var(--text-primary);
 }
 
-.lesson-duration {
+.lesson-description {
   font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.lesson-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
 }
 
@@ -360,6 +513,11 @@ const goBack = () => {
   color: #2e7d32;
 }
 
+.lesson-status.locked {
+  background: var(--gray-200);
+  color: var(--text-secondary);
+}
+
 .lesson-status.test {
   background: #e3f2fd;
   color: #1976d2;
@@ -370,31 +528,31 @@ const goBack = () => {
   color: #856404;
 }
 
-.start-button, .review-button {
+.lesson-button {
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
   text-decoration: none;
   font-weight: 500;
   font-size: 0.9rem;
-  transition: var(--transition);
+  transition: all 0.2s ease;
 }
 
-.start-button {
+.lesson-button.start {
   background: var(--primary);
   color: white;
 }
 
-.start-button:hover {
+.lesson-button.start:hover {
   background: var(--primary-dark);
 }
 
-.review-button {
-  background: var(--gray-100);
+.lesson-button.review {
+  background: var(--gray-200);
   color: var(--text-secondary);
 }
 
-.review-button:hover {
-  background: var(--gray-200);
+.lesson-button.review:hover {
+  background: var(--gray-300);
 }
 
 /* Действия с курсом */
@@ -402,45 +560,83 @@ const goBack = () => {
   display: flex;
   gap: 1rem;
   justify-content: center;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .action-btn {
   padding: 1rem 2rem;
   border-radius: 8px;
   font-weight: 500;
-  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
   cursor: pointer;
-  transition: var(--transition);
-  border: none;
 }
 
 .action-btn.primary {
   background: var(--primary);
   color: white;
+  border-color: var(--primary);
 }
 
-.action-btn.primary:hover {
+.action-btn.primary:hover:not(:disabled) {
   background: var(--primary-dark);
-  transform: translateY(-2px);
+  border-color: var(--primary-dark);
+}
+
+.action-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .action-btn.secondary {
-  background: var(--gray-100);
+  background: white;
   color: var(--text-secondary);
+  border-color: var(--border-color);
 }
 
 .action-btn.secondary:hover {
-  background: var(--gray-200);
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+}
+
+/* Добавляем стиль для состояния "не найден" */
+.not-found-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+}
+
+.not-found-state h3 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
 }
 
 /* Адаптивность */
 @media (max-width: 768px) {
-  .course-hero h1 {
+  .course-hero {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .course-cover img {
+    height: 150px;
+  }
+  
+  .course-info h1 {
     font-size: 2rem;
   }
   
   .course-meta {
     flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .content-header {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 1rem;
   }
   
@@ -456,22 +652,6 @@ const goBack = () => {
   
   .course-actions {
     flex-direction: column;
-  }
-}
-
-@media (max-width: 480px) {
-  .course-header {
-    padding: 1.5rem;
-  }
-  
-  .course-hero h1 {
-    font-size: 1.75rem;
-  }
-  
-  .content-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
   }
 }
 </style>
