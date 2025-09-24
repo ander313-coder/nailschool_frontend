@@ -10,6 +10,21 @@
       <span class="breadcrumb-separator">/</span>
       <span class="breadcrumb-current">Тест</span>
     </nav>
+    
+        <!-- Отладочная информация -->
+    <div v-if="isLoading" class="loading-state">
+      <p>Загрузка теста...</p>
+    </div>
+
+    <div v-else-if="error" class="error-state">
+      <p>Ошибка: {{ error }}</p>
+    </div>
+
+    <div v-else-if="!test" class="error-state">
+      <p>Тест не найден</p>
+      <p>ID теста: {{ $route.params.id }}</p>
+      <p>Store state: {{ JSON.stringify(testStore, null, 2) }}</p>
+    </div>
 
     <div class="test-container">
       <!-- Заголовок теста -->
@@ -147,29 +162,43 @@ const router = useRouter();
 const testStore = useTestStore();
 const progressStore = useProgressStore();
 
+// отладочное логирование
+console.log('🔍 TestView setup, route params:', route.params);
+console.log('🔍 Test store initial state:', testStore);
+
 const currentQuestionIndex = ref(0);
 const textAnswer = ref('');
 const userAnswers = ref<Record<number, any>>({});
-
-// Используем ref для массива выбранных ответов
 const selectedAnswers = ref<(number | string)[]>([]);
 
 // Загружаем реальные данные теста
 onMounted(() => {
+  console.log('🎯 TestView mounted');
   loadTestData();
 });
 
 const loadTestData = async () => {
   const testId = Number(route.params.id);
+  console.log('📥 Loading test ID:', testId);
+
   if (testId) {
-    await testStore.fetchTest(testId);
+    try {
+      await testStore.fetchTest(testId);
+      console.log('✅ Test loaded:', testStore.currentTest);
+      console.log('❓ Questions:', testStore.currentTest?.questions);
     
-    // Инициализируем ответы пользователя
-    if (testStore.currentTest) {
-      testStore.currentTest.questions.forEach((q) => {
-        userAnswers.value[q.id] = q.type === 'TEXT' ? '' : [];
-      });
+     // Инициализируем ответы пользователя
+      if (testStore.currentTest) {
+        testStore.currentTest.questions.forEach((q) => {
+          userAnswers.value[q.id] = q.type === 'TEXT' ? '' : [];
+        });
+        console.log('📝 User answers initialized:', userAnswers.value);
+      }
+    } catch (error) {
+      console.error('❌ Error loading test:', error);
     }
+  } else {
+    console.error('❌ No test ID in route params');
   }
 };
 
@@ -177,9 +206,18 @@ const loadTestData = async () => {
 const courseId = computed(() => route.params.courseId || '1');
 const lessonId = computed(() => route.params.lessonId || '1');
 
-const test = computed(() => testStore.currentTest);
-const questions = computed(() => testStore.currentTest?.questions || []);
+const test = computed(() => {
+  console.log('🔄 test computed called:', testStore.currentTest);
+  return testStore.currentTest;
+});
+const questions = computed(() => {
+  const q = testStore.currentTest?.questions || [];
+  console.log('🔄 questions computed:', q);
+  return q;
+});
+
 const isLoading = computed(() => testStore.isLoading);
+const error = computed(() => testStore.error);
 
 const currentQuestion = computed(() => {
   return questions.value[currentQuestionIndex.value];
