@@ -21,10 +21,10 @@
     </div>
 
     <!-- Видео плеер -->
-    <div class="video-section" v-if="hasVideo">
+    <div class="video-section" v-if="lessonDetail?.video_url">
       <video 
         ref="videoPlayer"
-        :src="getVideoSource(lessonDetail!.video_url)!" 
+        :src="lessonDetail.video_url" 
         controls
         class="video-player"
         @ended="handleVideoEnd"
@@ -35,13 +35,13 @@
     </div>
 
     <!-- Сообщение если видео нет -->
-    <div v-else-if="lessonDetail" class="no-video">
+    <div v-else class="no-video">
       <div class="no-video-content">
         <div class="no-video-icon">🎬</div>
         <h3>Видео материал готовится</h3>
         <p>Видео для этого урока будет доступно в ближайшее время.</p>
         <div class="lesson-content-placeholder">
-          <p>Содержание урока: {{ lessonDetail.description || 'Информация будет добавлена' }}</p>
+          <p>Содержание урока: {{ lessonDetail?.description || 'Информация будет добавлена' }}</p>
         </div>
       </div>
     </div>
@@ -148,26 +148,6 @@ const nextLessonId = computed(() =>
 const lesson = computed(() => 
   lessons.value.find(l => l.id === lessonId.value)
 );
-
-// Временный метод для тестирования видео
-const getVideoSource = (videoUrl: string | null): string | null => {
-  // Если есть настоящее видео - используем его
-  if (videoUrl) {
-    return videoUrl;
-  }
-  
-  // Для демонстрации всегда возвращаем тестовое видео
-  // Закомментируйте следующую строку чтобы показывать заглушку
-  return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-  
-  // Или возвращаем null чтобы показать заглушку
-  // return null;
-};
-
-// Проверяем есть ли видео для отображения
-const hasVideo = computed(() => {
-  return lessonDetail.value && getVideoSource(lessonDetail.value.video_url) !== null;
-});
 
 // Загрузка данных урока
 const loadLessonData = async () => {
