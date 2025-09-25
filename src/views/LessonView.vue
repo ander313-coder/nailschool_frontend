@@ -2,9 +2,7 @@
   <div class="lesson-view" v-if="!isLoading && !error">
     <!-- Хлебные крошки -->
     <nav class="breadcrumbs" v-if="lessonDetail">
-      <router-link to="/my-courses">Мои курсы</router-link>
-      <span class="separator">/</span>
-      <router-link :to="`/courses/${lessonDetail.course_id}`">
+      <router-link :to="`/course/${lessonDetail.course_id}`">
         {{ lessonDetail.course_title }}
       </router-link>
       <span class="separator">/</span>
@@ -36,14 +34,7 @@
 
     <!-- Сообщение если видео нет -->
     <div v-else class="no-video">
-      <div class="no-video-content">
-        <div class="no-video-icon">🎬</div>
-        <h3>Видео материал готовится</h3>
-        <p>Видео для этого урока будет доступно в ближайшее время.</p>
-        <div class="lesson-content-placeholder">
-          <p>Содержание урока: {{ lessonDetail?.description || 'Информация будет добавлена' }}</p>
-        </div>
-      </div>
+      <p>Видео материал для этого урока пока не доступен.</p>
     </div>
 
     <!-- Описание урока -->
@@ -99,7 +90,12 @@
         Вернуться к курсу
       </button>
     </div>
-  </div>
+
+    <HomeworkUpload 
+      v-if="lesson?.has_homework" 
+      :lesson-id="lessonId" 
+    />
+  </div> 
 
   <!-- Состояния загрузки и ошибок -->
   <div v-if="isLoading" class="loading-state">
@@ -116,6 +112,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCourseDetailStore } from '@/stores/courseDetail';
+import HomeworkUpload from '@/components/HomeworkUpload.vue'; 
 
 const route = useRoute();
 const router = useRouter();
@@ -177,6 +174,7 @@ const handleTimeUpdate = () => {
 };
 
 // Навигация
+
 const goToLesson = (lessonId: number) => {
   router.push(`/course/${courseId.value}/lesson/${lessonId}`);
 };
@@ -206,6 +204,7 @@ const goToCourse = () => {
 const retryLoading = () => {
   loadLessonData();
 };
+
 
 // Вспомогательные функции
 const formatDate = (dateString: string) => {

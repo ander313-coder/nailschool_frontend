@@ -83,6 +83,11 @@ const router = createRouter({
       name: 'settings',
       component: () => import('@/views/dashboard/SettingsView.vue'), 
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/design-system',
+      name: 'design-system',
+      component: () => import('@/views/DesignSystemView.vue')
     }
   ]
 })

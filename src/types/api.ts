@@ -34,6 +34,7 @@ export interface Lesson {
   order: number;
   duration_minutes: number;
   has_test: boolean;
+  has_homework: boolean; 
   completed: boolean;
   is_unlocked: boolean; 
 }
@@ -46,6 +47,7 @@ export interface LessonDetail {
   description: string;
   video_url: string | null;
   duration_minutes: number;
+  has_homework: boolean; 
   is_unlocked: boolean;
   materials: LessonMaterial[];
 }
@@ -106,4 +108,27 @@ export interface TestSubmission {
 export interface TestResult {
   score: number;
   passed: boolean;
+}
+// Типы для домашних заданий
+export type HomeworkStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface HomeworkFile {
+  id: number;
+  file: string;
+  uploaded_at: string;
+}
+
+export interface Homework {
+  id: number;
+  lesson: number;
+  comment: string;
+  status: HomeworkStatus;
+  files: HomeworkFile[];
+  created_at: string;
+}
+
+export interface HomeworkSubmission {
+  lesson_id: number;
+  comment: string;
+  files: File[];
 }
