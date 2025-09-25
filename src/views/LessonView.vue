@@ -194,8 +194,12 @@ const goToNextLesson = () => {
 };
 
 const goToTest = () => {
-  if (lesson.value?.has_test) {
-    router.push(`/course/${courseId.value}/lesson/${lessonId.value}/test`);
+  if (lesson.value?.has_test && courseId.value) {
+    const testId = lesson.value.id;
+    router.push({
+      path: `/course/${courseId.value}/lesson/${lessonId.value}/test`,
+      query: { testId: testId.toString() }
+    });
   }
 };
 

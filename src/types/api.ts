@@ -97,10 +97,8 @@ export interface Answer {
 export interface TestSubmission {
   test_id: number;
   answers: {
-    question_id: number;
-    answer_ids?: number[];
-    text_answer?: string;
-  }[];
+    [questionId: string]: number[] | string; 
+  };
 }
 
 export interface TestResult {

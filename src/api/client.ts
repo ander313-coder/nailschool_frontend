@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-// Базовый URL вашего Django backend
 const API_BASE_URL = 'http://localhost:8000/api';
 
-// Создаем экземпляр axios
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -11,29 +9,39 @@ const apiClient = axios.create({
   },
 });
 
-// Интерцептор для добавления токена к запросам
+// Интерцептор для добавления токена
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    console.log('🔧 API Request Config:');
+    console.log('Method:', config.method);
+    console.log('URL:', config.url);
+    console.log('Headers:', config.headers);
+    console.log('Data:', config.data);
+    
     return config;
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
-// Интерцептор для обработки ошибок
+// Интерцептор для ответов
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('✅ API Response:', response.status, response.data);
+    return response;
+  },
   (error) => {
-    if (error.response?.status === 401) {
-      // Если токен истек, перенаправляем на страницу входа
-      localStorage.removeItem('access_token');
-      window.location.href = '/login';
-    }
+    console.error('❌ API Response error:');
+    console.error('Status:', error.response?.status);
+    console.error('Data:', error.response?.data);
+    console.error('Headers:', error.response?.headers);
     return Promise.reject(error);
   }
 );
