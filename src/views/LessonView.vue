@@ -90,11 +90,18 @@
         Вернуться к курсу
       </button>
     </div>
-
-    <HomeworkUpload 
-      v-if="lesson?.has_homework" 
-      :lesson-id="lessonId" 
-    />
+    <HomeworkComponent v-if="lesson?.has_homework":lesson-id="lessonId"/>
+    <!-- Модальное окно теста -->
+    <div v-if="showTest" class="test-modal">
+      <div class="modal-content">
+        <button class="close-btn" @click="closeTest">×</button>
+        <TestComponent 
+          :test-id="getTestIdForLesson()" 
+          :lesson-id="lessonId"
+          @close="closeTest"
+        />
+      </div>
+    </div>
   </div> 
 
   <!-- Состояния загрузки и ошибок -->
@@ -112,7 +119,8 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCourseDetailStore } from '@/stores/courseDetail';
-import HomeworkUpload from '@/components/HomeworkUpload.vue'; 
+import HomeworkComponent from '@/components/HomeworkComponent.vue'; 
+import TestComponent from '@/components/TestComponent.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -126,6 +134,7 @@ const lessonDetail = computed(() => courseDetailStore.currentLesson);
 const lessons = computed(() => courseDetailStore.lessons);
 const isLoading = computed(() => courseDetailStore.isLoading);
 const error = computed(() => courseDetailStore.error);
+const showTest = ref(false);
 
 const currentLessonIndex = computed(() => 
   lessons.value.findIndex(lesson => lesson.id === lessonId.value)
@@ -192,9 +201,15 @@ const goToNextLesson = () => {
 };
 
 const goToTest = () => {
-  if (lesson.value?.has_test) {
-    router.push(`/course/${courseId.value}/lesson/${lessonId.value}/test`);
-  }
+  showTest.value = true;
+};
+
+const closeTest = () => {
+  showTest.value = false;
+};
+
+const getTestIdForLesson = () => {
+  return lessonId.value * 10; // Простая демо-логика
 };
 
 const goToCourse = () => {
@@ -409,6 +424,46 @@ const formatDate = (dateString: string) => {
   cursor: pointer;
 }
 
+/* СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА */
+.test-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  position: relative;
+  width: 800px;
+}
+
+.close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
 @media (max-width: 768px) {
   .lesson-view {
     padding: 15px;
@@ -421,6 +476,10 @@ const formatDate = (dateString: string) => {
   .nav-button {
     width: 100%;
     margin-bottom: 10px;
+  }
+  .modal-content {
+    width: 95%;
+    padding: 1rem;
   }
 }
 </style>

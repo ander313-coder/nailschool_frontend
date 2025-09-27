@@ -25,7 +25,7 @@
       <div class="stat-icon"><img src="/src/assets/styles/icons/practise.svg" alt="Общий прогресс"></div>
       <div class="stat-content">
         <h3>Общий прогресс</h3>
-        <p class="stat-number">{{ user?.progress || 0 }}%</p>
+        <p class="stat-number">{{ averageProgress }}%</p>
         <p class="stat-label">по всем курсам</p>
       </div>
     </div>
@@ -57,28 +57,36 @@ const { courses } = storeToRefs(coursesStore);
 const { totalCompletedLessons, totalCompletedTests } = storeToRefs(progressStore);
 const { user } = storeToRefs(authStore);
 
-// Вычисляем общую статистику
-const activeCoursesCount = computed(() => courses.value.length);
+// Демо-данные для статистики
+const demoStats = {
+  completedLessons: 12,
+  upcomingTests: 2,
+  averageProgress: 78,
+  learningStreak: 7 // дней подряд
+};
+
+// Вычисляем общую статистику (реальные + демо данные)
+const activeCoursesCount = computed(() => {
+  return courses.value.length || 3; // Демо: 3 активных курса
+});
 
 const completedLessonsCount = computed(() => {
-  return totalCompletedLessons.value;
+  return totalCompletedLessons.value || demoStats.completedLessons;
 });
 
 const averageProgress = computed(() => {
-  if (courses.value.length === 0) return 0;
-  
-  // Вычисляем средний прогресс по всем курсам
-  const totalProgress = courses.value.reduce((sum, course) => {
-    // Здесь можно добавить логику расчета прогресса по курсу
-    return sum + 65; // Заглушка
-  }, 0);
-  
-  return Math.round(totalProgress / courses.value.length);
+  return user?.value?.progress || demoStats.averageProgress;
 });
 
-// Считаем предстоящие тесты (заглушка)
+// Считаем предстоящие тесты (реальные + демо)
 const upcomingTests = computed(() => {
-  return Math.max(0, 3 - totalCompletedTests.value); // Заглушка
+  const realTests = Math.max(0, 3 - (totalCompletedTests.value || 0));
+  return realTests > 0 ? realTests : demoStats.upcomingTests;
+});
+
+// Добавим вычисление текущей серии обучения
+const currentStreak = computed(() => {
+  return demoStats.learningStreak;
 });
 </script>
 

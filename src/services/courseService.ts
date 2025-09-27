@@ -14,12 +14,12 @@ export const courseService = {
   },
 
   // Получить детали курса по ID
-  async getCourse(id: number): Promise<Course> {
+  async getCourse(courseId: number): Promise<Course> {
     try {
-      const response = await apiClient.get(`/courses/${id}/`);
+      const response = await apiClient.get(`/courses/${courseId}/`);
       return response.data;
     } catch (error) {
-      console.error(`Error fetching course ${id}:`, error);
+      console.error(`Error fetching course ${courseId}:`, error);
       throw error;
     }
   },

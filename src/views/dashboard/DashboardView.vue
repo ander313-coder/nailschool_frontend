@@ -21,13 +21,6 @@
       <!-- Компонент с курсами -->
       <UserCourses />
     </template>
-        <!-- Временная кнопка для тестирования -->
-    <div class="debug-section">
-      <button @click="testAPI" class="debug-btn">Test API Endpoints</button>
-      <div v-if="apiTestResult" class="api-result">
-        <pre>{{ apiTestResult }}</pre>
-      </div>
-    </div>
   </DashboardLayout>
 </template>
 
@@ -161,26 +154,6 @@ const loadData = async () => {
 
 .retry-button:hover {
   background: #7b3fb3;
-}
-
-.debug-section {
-  margin-top: 2rem;
-  padding: 1rem;
-  background: #f5f5f5;
-  border-radius: 8px;
-}
-
-.debug-btn {
-  background: #666;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.debug-btn:hover {
-  background: #555;
 }
 
 .api-result {
