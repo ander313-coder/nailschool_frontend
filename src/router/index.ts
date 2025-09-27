@@ -20,19 +20,19 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/course/:courseId/lesson/:lessonId',
+      path: '/courses/:courseId/lesson/:lessonId',
       name: 'lesson-detail',
       component: () => import('@/views/LessonView.vue'),
       meta: { requiresAuth: true }
     },
     {
-      path: '/course/:courseId/lesson/:lessonId/test',
+      path: '/courses/:courseId/lesson/:lessonId/test',
       name: 'lesson-test',
       component: () => import('@/views/TestView.vue'),
       meta: { requiresAuth: true }
     },
     {
-      path: '/course/:courseId/lesson/:lessonId/test/results',
+      path: '/courses/:courseId/lesson/:lessonId/test/results',
       name: 'test-results',
       component: () => import('@/views/TestResultsView.vue'),
       meta: { requiresAuth: true }

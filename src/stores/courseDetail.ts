@@ -56,47 +56,75 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
       isLoading.value = false;
     }
   };
-
   // Загрузка деталей конкретного урока
   const fetchLessonDetail = async (lessonId: number) => {
-    isLoading.value = true;
-    error.value = null;
+  isLoading.value = true;
+  error.value = null;
 
-    try {
-      currentLesson.value = await lessonService.getLessonDetail(lessonId);
-      console.log(`✅ Lesson detail loaded:`, currentLesson.value.title);
-    } catch (err: any) {
-      error.value = 'Ошибка при загрузке урока';
-      console.error('❌ Error loading lesson detail:', err);
-    } finally {
-      isLoading.value = false;
-    }
-  };
+  try {
+    const lessonData = await lessonService.getLessonDetail(lessonId);
+    currentLesson.value = lessonData;
+    
+    console.log('📥 Загружены детали урока, is_completed:', lessonData.is_completed);
+    
+  } catch (err: any) {
+    error.value = 'Ошибка при загрузке урока';
+    console.error('❌ Error loading lesson detail:', err);
+  } finally {
+    isLoading.value = false;
+  }
+};
 
   // Отметить урок как завершенный
   const markLessonCompleted = async (lessonId: number) => {
-    try {
-      await lessonService.completeLesson(lessonId);
-      
-      // Обновляем локальное состояние
-      const lesson = lessons.value.find(l => l.id === lessonId);
-      if (lesson) {
-        lesson.completed = true;
-        updateProgress(lessons.value);
-      }
-    } catch (err) {
-      console.error('Error marking lesson completed:', err);
+  try {
+    await lessonService.completeLesson(lessonId);
+    
+    // Обновляем локальное состояние БЕЗ перезагрузки
+    const lessonIndex = lessons.value.findIndex(l => l.id === lessonId);
+    if (lessonIndex !== -1) {
+      lessons.value[lessonIndex].completed = true;
     }
-  };
+    
+    // Обновляем текущий урок если он активен
+    if (currentLesson.value && currentLesson.value.id === lessonId) {
+      currentLesson.value = {
+        ...currentLesson.value,
+        is_completed: true
+      };
+    }
+    
+    updateProgress(lessons.value);
+  } catch (err) {
+    console.error('Error marking lesson completed:', err);
+    throw err;
+  }
+};
 
-  // Обновить прогресс просмотра видео
-  const updateVideoProgress = async (lessonId: number, progress: number) => {
-    try {
-      await lessonService.updateVideoProgress(lessonId, progress);
-    } catch (err) {
-      console.error('Error updating video progress:', err);
+const markLessonIncomplete = async (lessonId: number) => {
+  try {
+    await lessonService.uncompleteLesson(lessonId);
+    
+    // Обновляем локальное состояние БЕЗ перезагрузки
+    const lessonIndex = lessons.value.findIndex(l => l.id === lessonId);
+    if (lessonIndex !== -1) {
+      lessons.value[lessonIndex].completed = false;
     }
-  };
+    
+    // Обновляем текущий урок если он активен
+    if (currentLesson.value && currentLesson.value.id === lessonId) {
+      currentLesson.value = {
+        ...currentLesson.value,
+        is_completed: false
+      };
+    }
+    
+    updateProgress(lessons.value);
+  } catch (err) {
+    console.error('Error marking lesson incomplete:', err);
+    throw err;
+  }
+};
 
   // Вспомогательная функция для обновления прогресса
   const updateProgress = (lessonsData: Lesson[]) => {
@@ -133,7 +161,7 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
     fetchCourseDetail,
     fetchLessonDetail,
     markLessonCompleted,
-    updateVideoProgress,
+    markLessonIncomplete,
     reset
   };
 });

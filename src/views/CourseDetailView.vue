@@ -25,55 +25,69 @@
 
     <!-- Основной контент -->
     <div v-else-if="course">
-      <!-- ЗАГОЛОВОК КУРСА - ПЕРЕДЕЛАННЫЙ -->
-      <div class="course-hero">
-        <!-- Обложка курса или заглушка -->
-        <div class="hero-cover" :class="{ 'has-image': course.cover_image }">
-          <img v-if="course.cover_image" :src="course.cover_image" :alt="course.title" />
-          <div v-else class="cover-placeholder">
-            <div class="placeholder-icon">📚</div>
-            <span class="placeholder-text">Курс: {{ course.title }}</span>
-          </div>
+      <!-- ОБНОВЛЕННЫЙ ЗАГОЛОВОК КУРСА -->
+      <div class="course-header">
+        <!-- Картинка курса -->
+        <div class="course-media" v-if="course.cover_image">
+          <img :src="course.cover_image" :alt="course.title" class="course-image" />
+        </div>
+        <div v-else class="course-media-placeholder">
+          <div class="placeholder-icon">📚</div>
+        </div>
+
+        <!-- Информация о курсе -->
+        <div class="course-info">
+          <div class="course-badge">{{ courseLevel }}</div>
+          <h1 class="course-title">{{ course.title }}</h1>
+          <p class="course-description">{{ course.description }}</p>
           
-          <div class="hero-overlay">
-            <div class="hero-content">
-              <h1>{{ course.title }}</h1>
-              <p class="course-description">{{ course.description }}</p>
-              
-              <div class="hero-meta">
-                <div class="meta-item">
-                  <span class="meta-icon">📚</span>
-                  <span>{{ lessons.length }} уроков</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-icon">⏱️</span>
-                  <span>{{ totalDuration }} минут</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-icon">🎯</span>
-                  <span class="course-level">{{ courseLevel }}</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-icon">👩‍🏫</span>
-                  <span>{{ course.instructors?.length || 1 }} преподаватель</span>
-                </div>
+          <!-- Статистика курса -->
+          <div class="course-stats">
+            <div class="stat">
+              <span class="stat-icon">📚</span>
+              <div class="stat-info">
+                <span class="stat-value">{{ lessons.length }}</span>
+                <span class="stat-label">уроков</span>
+              </div>
+            </div>
+            <div class="stat">
+              <span class="stat-icon">⏱️</span>
+              <div class="stat-info">
+                <span class="stat-value">{{ totalDuration }}</span>
+                <span class="stat-label">минут</span>
+              </div>
+            </div>
+            <div class="stat">
+              <span class="stat-icon">👩‍🏫</span>
+              <div class="stat-info">
+                <span class="stat-value">{{ course.instructors?.length || 1 }}</span>
+                <span class="stat-label">преподаватель</span>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Прогресс курса -->
-        <div class="hero-progress">
-          <div class="progress-header">
-            <span>Ваш прогресс</span>
-            <span>{{ progress.progress_percent }}%</span>
+          <!-- Прогресс -->
+          <div class="course-progress">
+            <div class="progress-info">
+              <span class="progress-label">Ваш прогресс</span>
+              <span class="progress-percent">{{ progress.progress_percent }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: progress.progress_percent + '%' }"></div>
+            </div>
+            <div class="progress-details">
+              {{ progress.completed_lessons }}/{{ progress.total_lessons }} уроков завершено
+            </div>
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: progress.progress_percent + '%' }"></div>
-          </div>
-          <div class="progress-stats">
-            {{ progress.completed_lessons }}/{{ progress.total_lessons }} уроков завершено
-          </div>
+
+          <!-- Кнопка продолжить -->
+          <button 
+            class="continue-button" 
+            @click="continueLearning"
+            :disabled="!nextLesson"
+          >
+            {{ continueButtonText }}
+          </button>
         </div>
       </div>
 
@@ -105,18 +119,16 @@
                 <span v-if="lesson.has_test" class="lesson-test">📝 Тест</span>
               </div>
             </div>
-            
             <div class="lesson-actions">
-              <span v-if="lesson.completed" class="lesson-status completed">✅ Завершено</span>
-              <span v-else-if="!lesson.is_unlocked && !lesson.completed && !isFirstLesson(lesson)" class="lesson-status locked">🔒 Заблокировано</span>
-              <span v-else-if="lesson.has_test" class="lesson-status test">📝 Тест</span>
-              <span v-else class="lesson-status pending">⏳ Ожидает</span>
+              <!-- Простой статус -->
+              <span class="lesson-status" :class="lesson.completed ? 'completed' : 'pending'">
+                {{ lesson.completed ? '✅ Завершено' : '⏳ Ожидает' }}
+              </span>
               
               <router-link 
                 v-if="lesson.is_unlocked || lesson.completed || isFirstLesson(lesson)"
-                :to="`/course/${courseId}/lesson/${lesson.id}`"
+                :to="`/courses/${courseId}/lesson/${lesson.id}`"
                 class="lesson-button"
-                :class="lesson.completed ? 'review' : 'start'"
               >
                 {{ lesson.completed ? 'Повторить' : 'Начать' }}
               </router-link>
@@ -244,7 +256,7 @@ const continueButtonText = computed(() => {
 const continueLearning = () => {
   const lesson = nextLesson.value;
   if (lesson?.id && courseId.value) {
-    router.push(`/course/${courseId.value}/lesson/${lesson.id}`);
+    router.push(`/courses/${courseId.value}/lesson/${lesson.id}`);
   }
 };
 </script>
@@ -334,151 +346,147 @@ const continueLearning = () => {
   display: inline-block;
 }
 
-/* Заголовок курса */
-.course-hero {
+/* ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ ЗАГОЛОВКА КУРСА */
+.course-header {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 3rem;
   margin-bottom: 3rem;
+  align-items: start;
+}
+
+.course-media {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: var(--shadow-lg);
 }
 
-.hero-cover {
-  position: relative;
-  min-height: 300px;
-  background: linear-gradient(135deg, #8C4CC3 0%, #6a3093 100%);
-}
-
-.hero-cover.has-image img {
+.course-image {
   width: 100%;
-  height: 100%;
+  height: 300px;
   object-fit: cover;
-  position: absolute;
-  top: 0;
-  left: 0;
+  display: block;
 }
 
-.cover-placeholder {
+.course-media-placeholder {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #8C4CC3 0%, #6a3093 100%);
+  border-radius: 16px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: white;
-  text-align: center;
-  padding: 2rem;
+  box-shadow: var(--shadow-lg);
 }
 
 .placeholder-icon {
   font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.placeholder-text {
-  font-size: 1.2rem;
-  opacity: 0.9;
-}
-
-.hero-overlay {
-  position: relative;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 3rem 2rem;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-
-.hero-content {
-  max-width: 800px;
-  width: 100%;
-  margin: 0 auto;
   color: white;
+  opacity: 0.8;
 }
 
-.hero-content h1 {
+.course-info {
+  padding: 1rem 0;
+}
+
+.course-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.course-title {
   font-size: 2.5rem;
   font-weight: 700;
+  line-height: 1.2;
   margin-bottom: 1rem;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  color: var(--text-primary);
 }
 
-.hero-content .course-description {
-  font-size: 1.2rem;
+.course-description {
+  font-size: 1.1rem;
   line-height: 1.6;
+  color: var(--text-secondary);
   margin-bottom: 2rem;
-  opacity: 0.9;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-.hero-meta {
+/* Статистика курса */
+.course-stats {
   display: flex;
   gap: 2rem;
-  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--gray-50);
+  border-radius: 12px;
 }
 
-.hero-meta .meta-item {
+.stat {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
+  gap: 1rem;
 }
 
-.hero-meta .meta-icon {
-  font-size: 1.2rem;
-}
-
-.hero-progress {
+.stat-icon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: white;
-  padding: 1.5rem 2rem;
-  border-top: 1px solid var(--border-color);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
 }
 
-.hero-progress .progress-header {
+.stat-info {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  font-weight: 600;
+  flex-direction: column;
 }
 
-.hero-progress .progress-bar {
-  height: 8px;
-  background: var(--gray-200);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
 }
 
-.hero-progress .progress-fill {
-  height: 100%;
-  background: var(--primary);
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.hero-progress .progress-stats {
-  text-align: center;
-  color: var(--text-secondary);
+.stat-label {
   font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
 }
 
 /* Прогресс */
-.progress-container {
+.course-progress {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-color);
 }
 
-.progress-header {
+.progress-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  font-weight: 500;
+}
+
+.progress-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.progress-percent {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 1.2rem;
 }
 
 .progress-bar {
@@ -491,37 +499,41 @@ const continueLearning = () => {
 
 .progress-fill {
   height: 100%;
-  background: var(--primary);
+  background: linear-gradient(90deg, var(--primary), #a56dd1);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
 
-.progress-stats {
+.progress-details {
+  text-align: center;
   font-size: 0.9rem;
   color: var(--text-secondary);
-  text-align: center;
 }
 
-/* Содержание курса */
-.course-content {
-  margin-top: 3rem;
-}
-
-.content-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-}
-
-.content-header h2 {
-  font-size: 1.8rem;
+/* Кнопка продолжить */
+.continue-button {
+  width: 100%;
+  padding: 1rem 2rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.content-stats {
-  color: var(--text-secondary);
+.continue-button:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.continue-button:disabled {
+  background: var(--gray-300);
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 /* Список уроков */
@@ -710,32 +722,35 @@ const continueLearning = () => {
 }
 
 /* Адаптивность */
-@media (max-width: 768px) {
-  .hero-content h1 {
+@media (max-width: 968px) {
+  .course-header {
+    grid-template-columns: 250px 1fr;
+    gap: 2rem;
+  }
+  
+  .course-title {
     font-size: 2rem;
   }
-  
-  .hero-content .course-description {
-    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .course-header {
+    grid-template-columns: 1fr;
+    gap: 2rem;
   }
   
-  .hero-meta {
-    gap: 1rem;
+  .course-media,
+  .course-media-placeholder {
+    height: 200px;
   }
   
-  .hero-meta .meta-item {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.9rem;
-  }
-  
-  .hero-overlay {
-    padding: 2rem 1rem;
-  }
-  
-  .content-header {
+  .course-stats {
     flex-direction: column;
-    align-items: flex-start;
     gap: 1rem;
+  }
+  
+  .course-title {
+    font-size: 1.8rem;
   }
   
   .lesson-item {
@@ -754,13 +769,26 @@ const continueLearning = () => {
 }
 
 @media (max-width: 480px) {
-  .hero-meta {
-    flex-direction: column;
-    align-items: flex-start;
+.course-title {
+    font-size: 1.6rem;
   }
   
-  .hero-content h1 {
-    font-size: 1.8rem;
+  .course-description {
+    font-size: 1rem;
+  }
+  
+  .stat {
+    gap: 0.8rem;
+  }
+  
+  .stat-icon {
+    font-size: 1.2rem;
+    width: 35px;
+    height: 35px;
+  }
+  
+  .stat-value {
+    font-size: 1.3rem;
   }
 }
 </style>

@@ -2,7 +2,7 @@
   <div class="lesson-view" v-if="!isLoading && !error">
     <!-- Хлебные крошки -->
     <nav class="breadcrumbs" v-if="lessonDetail">
-      <router-link :to="`/course/${lessonDetail.course_id}`">
+      <router-link :to="`/courses/${lessonDetail.course_id}`">
         {{ lessonDetail.course_title }}
       </router-link>
       <span class="separator">/</span>
@@ -89,6 +89,26 @@
       >
         Вернуться к курсу
       </button>
+    </div>
+    <!-- Чекбокс завершения урока -->
+    <div class="completion-checkbox" v-if="!isLoading">
+      <label class="checkbox-label">
+        <input 
+          type="checkbox" 
+          :checked="localCompleted" 
+          @change="toggleCompletion"
+          class="checkbox-input"
+          :disabled="isLoadingCompletion"
+        />
+        <span class="checkmark" :class="{ checked: localCompleted }"></span>
+        <span class="checkbox-text">
+          {{ localCompleted ? 'Урок завершен' : 'Отметить как пройденный' }}
+        </span>
+      </label>
+      
+      <div v-if="isLoadingCompletion" class="loading-indicator">
+        Сохранение...
+      </div>
     </div>
     <HomeworkComponent v-if="lesson?.has_homework":lesson-id="lessonId"/>
     <!-- Модальное окно теста -->
@@ -185,7 +205,7 @@ const handleTimeUpdate = () => {
 // Навигация
 
 const goToLesson = (lessonId: number) => {
-  router.push(`/course/${courseId.value}/lesson/${lessonId}`);
+  router.push(`/courses/${courseId.value}/lesson/${lessonId}`);
 };
 
 const goToPreviousLesson = () => {
@@ -225,9 +245,159 @@ const retryLoading = () => {
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('ru-RU');
 };
+
+// Локальное состояние для чекбокса
+const localCompleted = ref(false);
+const isLoadingCompletion = ref(false);
+const isInitialized = ref(false);
+
+// Инициализация при загрузке компонента
+onMounted(() => {
+  initializeCompletionState();
+});
+
+// Следим за изменениями данных урока
+watch(lessonDetail, (newLesson) => {
+  if (newLesson) {
+    // Защита от undefined - используем false по умолчанию
+    localCompleted.value = newLesson.is_completed === true;
+    console.log('📥 Данные урока обновились, is_completed:', newLesson.is_completed, 'установлено:', localCompleted.value);
+  }
+}, { immediate: true });
+
+// Функция инициализации состояния
+const initializeCompletionState = () => {
+  if (lessonDetail.value) {
+    // Защита от undefined
+    localCompleted.value = lessonDetail.value.is_completed === true;
+    console.log('🎯 Инициализация чекбокса:', lessonDetail.value.is_completed, 'установлено:', localCompleted.value);
+    isInitialized.value = true;
+  }
+};
+// Переключение статуса завершения
+const toggleCompletion = async () => {
+  if (isLoadingCompletion.value) return;
+  
+  console.log('🔄 Начало переключения, текущее состояние:', localCompleted.value);
+  
+  isLoadingCompletion.value = true;
+  const previousState = localCompleted.value;
+  
+  try {
+    // Мгновенно меняем состояние для UX
+    localCompleted.value = !previousState;
+    console.log('🔄 Установлено новое состояние:', localCompleted.value);
+    
+    if (localCompleted.value) {
+      console.log('📤 Отмечаем как завершенный');
+      await courseDetailStore.markLessonCompleted(lessonId.value);
+    } else {
+      console.log('📤 Отмечаем как не завершенный');
+      await courseDetailStore.markLessonIncomplete(lessonId.value);
+    }
+    
+    console.log('✅ Статус успешно обновлен');
+    
+  } catch (error: any) {
+    // При ошибке возвращаем предыдущее состояние
+    console.error('❌ Ошибка при изменении статуса:', error);
+    localCompleted.value = previousState;
+    
+    // Показываем уведомление об ошибке
+    alert('Не удалось сохранить статус урока. Попробуйте снова.');
+  } finally {
+    isLoadingCompletion.value = false;
+    console.log('🔚 Завершение переключения, финальное состояние:', localCompleted.value);
+  }
+};
+
 </script>
 
 <style scoped>
+.completion-checkbox {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+.checkbox-input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkmark {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #8C4CC3;
+  border-radius: 4px;
+  background: white;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.checkbox-input:checked + .checkmark {
+  background: #8C4CC3;
+  border-color: #8C4CC3;
+}
+
+.checkbox-input:checked + .checkmark::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.checkbox-input:disabled + .checkmark {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.checkbox-text {
+  transition: color 0.2s ease;
+}
+
+.checkbox-input:checked ~ .checkbox-text {
+  color: #8C4CC3;
+  font-weight: 600;
+}
+
+.loading-indicator {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* Состояния при наведении */
+.checkbox-label:hover .checkmark {
+  border-color: #6a3093;
+  transform: scale(1.05);
+}
+
+.checkbox-input:checked:hover + .checkmark {
+  background: #6a3093;
+  border-color: #6a3093;
+}
+
 .lesson-view {
   max-width: 1200px;
   margin: 0 auto;
@@ -465,6 +635,19 @@ const formatDate = (dateString: string) => {
 }
 
 @media (max-width: 768px) {
+    .completion-checkbox {
+    padding: 1rem;
+  }
+  
+  .checkbox-label {
+    font-size: 1rem;
+  }
+  
+  .checkmark {
+    width: 20px;
+    height: 20px;
+  }
+  
   .lesson-view {
     padding: 15px;
   }

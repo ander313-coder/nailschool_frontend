@@ -16,23 +16,36 @@ export const lessonService = {
   // Получить детальную информацию об уроке 
   async getLessonDetail(lessonId: number): Promise<LessonDetail> {
     try {
-      const response = await apiClient.get(`/lessons/${lessonId}/`);
+      const response = await apiClient.get(`/courses/lessons/${lessonId}/`);
       return response.data;
     } catch (error) {
-      console.error(`Error fetching lesson detail ${lessonId}:`, error);
+      console.error(`Error fetching lesson ${lessonId}:`, error);
       throw error;
     }
   },
 
-  // Отметить урок как завершенный 
+// Отметить урок как завершенный
   async completeLesson(lessonId: number): Promise<void> {
     try {
-      await apiClient.post('/progress/', {
+      await apiClient.post('/courses/progress/', {
         lesson: lessonId,
         is_completed: true
       });
     } catch (error) {
       console.error(`Error completing lesson ${lessonId}:`, error);
+      throw error;
+    }
+  },
+
+  // Отменить завершение урока
+  async uncompleteLesson(lessonId: number): Promise<void> {
+    try {
+      await apiClient.post('/courses/progress/', {
+        lesson: lessonId,
+        is_completed: false
+      });
+    } catch (error) {
+      console.error(`Error uncompleting lesson ${lessonId}:`, error);
       throw error;
     }
   },

@@ -49,6 +49,7 @@ export interface LessonDetail {
   duration_minutes: number;
   has_homework: boolean; 
   is_unlocked: boolean;
+  is_completed: boolean;
   materials: LessonMaterial[];
 }
 
