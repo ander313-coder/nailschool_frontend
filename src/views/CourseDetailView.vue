@@ -57,13 +57,6 @@
                 <span class="stat-label">минут</span>
               </div>
             </div>
-            <div class="stat">
-              <span class="stat-icon">👩‍🏫</span>
-              <div class="stat-info">
-                <span class="stat-value">{{ course.instructors?.length || 1 }}</span>
-                <span class="stat-label">преподаватель</span>
-              </div>
-            </div>
           </div>
 
           <!-- Прогресс -->

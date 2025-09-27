@@ -1,0 +1,109 @@
+nailschool-frontend                  
+├─ public                            
+│  └─ favicon.ico                    
+├─ src                               
+│  ├─ api                            
+│  │  └─ client.ts                   
+│  ├─ assets                         
+│  │  └─ styles                      
+│  │     ├─ components               
+│  │     ├─ icons                    
+│  │     │  ├─ career.svg            
+│  │     │  ├─ glasses.svg           
+│  │     │  ├─ infinity.svg          
+│  │     │  ├─ ins.png               
+│  │     │  ├─ online.svg            
+│  │     │  ├─ practise.svg          
+│  │     │  ├─ school.svg            
+│  │     │  ├─ structure.svg         
+│  │     │  ├─ test.svg              
+│  │     │  ├─ tg.png                
+│  │     │  ├─ vk.png                
+│  │     │  └─ wa.png                
+│  │     ├─ pic                      
+│  │     │  ├─ logo-wight.png        
+│  │     │  ├─ logo.png              
+│  │     │  ├─ main.jpg              
+│  │     │  ├─ pilki.jpg             
+│  │     │  └─ prepod.jpg            
+│  │     ├─ global.css               
+│  │     ├─ main.css                 
+│  │     └─ variables.css            
+│  ├─ components                     
+│  │  ├─ dashboard                   
+│  │  │  ├─ CourseProgress.vue       
+│  │  │  ├─ DashboardStatus.vue      
+│  │  │  ├─ ProgressChart.vue        
+│  │  │  ├─ StatsCards.vue           
+│  │  │  └─ UserCourses.vue          
+│  │  ├─ sections                    
+│  │  │  ├─ CourseCard.vue           
+│  │  │  ├─ ProgressCard.vue         
+│  │  │  └─ StatsOverview.vue        
+│  │  ├─ ui                          
+│  │  │  └─ AppLoading.vue           
+│  │  ├─ AppFooter.vue               
+│  │  ├─ AppHeader.vue               
+│  │  ├─ HomeworkComponent.vue       
+│  │  ├─ HomeworkDemo.vue            
+│  │  ├─ HomeworkUpload.vue          
+│  │  ├─ RealTestView.vue            
+│  │  ├─ TestComponent.vue           
+│  │  └─ TestDemo.vue                
+│  ├─ data                           
+│  │  └─ demoStats.ts                
+│  ├─ router                         
+│  │  └─ index.ts                    
+│  ├─ services                       
+│  │  ├─ courseService.ts            
+│  │  ├─ homeworkService.ts          
+│  │  ├─ lessonService.ts            
+│  │  └─ testService.ts              
+│  ├─ stores                         
+│  │  ├─ auth.ts                     
+│  │  ├─ counter.ts                  
+│  │  ├─ courseDetail.ts             
+│  │  ├─ courses.ts                  
+│  │  ├─ homeworkStore.ts            
+│  │  ├─ lessonDetail.ts             
+│  │  ├─ progress.ts                 
+│  │  └─ testStore.ts                
+│  ├─ types                          
+│  │  └─ api.ts                      
+│  ├─ utils                          
+│  │  └─ apiTester.ts                
+│  ├─ views                          
+│  │  ├─ dashboard                   
+│  │  │  ├─ DashboardLayout.vue      
+│  │  │  ├─ DashboardView.vue        
+│  │  │  ├─ ProfileSettingsView.vue  
+│  │  │  ├─ ProgressView.vue         
+│  │  │  ├─ SettingsView.vue         
+│  │  │  └─ UserCoursesView.vue      
+│  │  ├─ AboutView.vue               
+│  │  ├─ CourseDetailView.vue        
+│  │  ├─ CoursesView.vue             
+│  │  ├─ DesignSystemView.vue        
+│  │  ├─ HomeView.vue                
+│  │  ├─ LessonView.vue              
+│  │  ├─ LoginView.vue               
+│  │  ├─ RegisterView.vue            
+│  │  ├─ TestResultsView.vue         
+│  │  └─ TestView.vue                
+│  ├─ App.vue                        
+│  ├─ main.ts                        
+│  └─ shims-vue.d.ts                 
+├─ env.d.ts                          
+├─ eslint.config.ts                  
+├─ index.html                        
+├─ package-lock.json                 
+├─ package.json                      
+├─ README.md                         
+├─ tree                              
+├─ tsconfig.app.json                 
+├─ tsconfig.json                     
+├─ tsconfig.node.json                
+├─ tsconfig.node.tsbuildinfo         
+├─ tsconfig.tsbuildinfo              
+├─ vite.config.d.ts                  
+└─ vite.config.ts                    
