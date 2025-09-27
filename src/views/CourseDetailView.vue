@@ -256,8 +256,8 @@ const continueLearning = () => {
 
 <style scoped>
 .course-detail {
-  max-width: 1000px;
-  margin: 80px auto 40px;
+  max-width: 1200px;
+  margin: 40px auto 40px;
   padding: 0 20px;
 }
 
@@ -342,7 +342,7 @@ const continueLearning = () => {
 /* ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ ЗАГОЛОВКА КУРСА */
 .course-header {
   display: grid;
-  grid-template-columns: 400px 1fr;
+  grid-template-columns: 500px 1fr;
   gap: 3rem;
   margin-bottom: 3rem;
   align-items: start;

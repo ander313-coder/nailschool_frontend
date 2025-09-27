@@ -158,10 +158,6 @@
               </div>
             </div>
 
-            <div class="lesson-status" v-if="lessonItem.id !== lessonId">
-              <span v-if="lessonItem.completed" class="status-completed">Завершено</span>
-              <span v-else-if="!lessonItem.is_unlocked" class="status-locked">Заблокировано</span>
-            </div>
           </div>
         </div>
       </div>
@@ -170,7 +166,6 @@
     <!-- Модальное окно теста -->
     <div v-if="showTest" class="test-modal">
       <div class="modal-content">
-        <button class="close-btn" @click="closeTest">×</button>
         <TestComponent 
           :test-id="getTestIdForLesson()" 
           :lesson-id="lessonId"
@@ -374,18 +369,127 @@ const toggleCompletion = async () => {
 /* Основной контейнер с grid */
 .lesson-container {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr 450px;
   gap: 2rem;
   align-items: start;
   margin-top: 1rem;
 }
 
-/* Левая колонка - основной контент */
-.lesson-content {
-  min-width: 0; /* Предотвращает переполнение */
+/* Основные стили контента */
+.lesson-view {
+  max-width: 1200px;
+  margin: 40px auto 40px;
+  padding: 0 20px;
 }
 
-/* Правая колонка - боковая панель */
+.lesson-content {
+  min-width: 0;
+}
+
+/* Хлебные крошки */
+.breadcrumbs {
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.breadcrumbs a {
+  color: #8C4CC3;
+  text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.separator {
+  margin: 0 8px;
+  color: #666;
+}
+
+/* Заголовок урока */
+.lesson-header {
+  margin-bottom: 30px;
+}
+
+.lesson-header h1 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.lesson-meta {
+  display: flex;
+  gap: 20px;
+
+}
+.test-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: solid 1px;
+
+}
+
+
+/* Видео секция */
+.video-section {
+  margin-bottom: 30px;
+}
+
+.video-player {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  border-radius: 8px;
+}
+
+.no-video {
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* Описание и материалы */
+.lesson-description,
+.materials-section {
+  margin-bottom: 30px;
+}
+
+.lesson-description h3,
+.materials-section h3 {
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.materials-list {
+  list-style: none;
+  padding: 0;
+}
+
+.material-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.material-link {
+  color: #8C4CC3;
+  text-decoration: none;
+  flex-grow: 1;
+}
+
+.material-link:hover {
+  text-decoration: underline;
+}
+
+.material-date {
+  color: #666;
+  font-size: 12px;
+}
+
+/* Боковая панель с уроками */
 .lessons-sidebar {
   position: sticky;
   top: 2rem;
@@ -397,7 +501,6 @@ const toggleCompletion = async () => {
   overflow-y: auto;
 }
 
-/* Заголовок боковой панели */
 .sidebar-header {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
@@ -464,12 +567,7 @@ const toggleCompletion = async () => {
   cursor: not-allowed;
 }
 
-.lesson-item.locked:hover {
-  transform: none;
-  background: inherit;
-}
-
-/* Иконки уроков */
+/* Иконки и статусы */
 .lesson-item-icon {
   flex-shrink: 0;
   width: 20px;
@@ -478,11 +576,6 @@ const toggleCompletion = async () => {
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
-  margin-top: 0.1rem;
-}
-
-.lesson-item.current .lesson-item-icon {
-  color: white;
 }
 
 .completed-icon {
@@ -490,95 +583,12 @@ const toggleCompletion = async () => {
   font-weight: bold;
 }
 
-.current-icon {
-  color: inherit;
-}
-
-.default-icon {
-  color: #adb5bd;
-  font-size: 0.6rem;
-}
-
-/* Контент урока */
-.lesson-item-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.lesson-title {
-  font-weight: 500;
-  font-size: 0.9rem;
-  line-height: 1.3;
-  margin-bottom: 0.25rem;
-  word-wrap: break-word;
-}
-
-.lesson-item.current .lesson-title {
-  font-weight: 600;
-}
-
-.lesson-meta {
-  display: flex;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: #666;
-}
-
-.lesson-item.current .lesson-meta {
-  color: rgba(255,255,255,0.8);
-}
-
-.test-badge, .homework-badge {
-  background: #FF6B6B;
-  color: white;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-}
-
-.lesson-item.current .test-badge,
-.lesson-item.current .homework-badge {
-  background: rgba(255,255,255,0.2);
-}
-
-/* Статус урока */
-.lesson-status {
-  flex-shrink: 0;
-  font-size: 0.7rem;
-  font-weight: 500;
-}
-
-.status-completed {
+.completed-badge {
   color: #4ECDC4;
+  font-weight: bold;
 }
 
-.status-locked {
-  color: #adb5bd;
-}
-
-/* Адаптивность для мобильных устройств */
-@media (max-width: 768px) {
-  .lesson-container {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .lessons-sidebar {
-    position: static;
-    max-height: none;
-    order: 2;
-  }
-  
-  .lesson-content {
-    order: 1;
-  }
-  
-  .lesson-item {
-    padding: 1rem;
-  }
-}
-
-/* Существующие стили (оставляем без изменений) */
+/* Чекбокс завершения */
 .completion-checkbox {
   margin: 2rem 0;
   padding: 1.5rem;
@@ -601,7 +611,6 @@ const toggleCompletion = async () => {
 .checkbox-input {
   position: absolute;
   opacity: 0;
-  cursor: pointer;
 }
 
 .checkmark {
@@ -631,138 +640,7 @@ const toggleCompletion = async () => {
   font-weight: bold;
 }
 
-.checkbox-input:disabled + .checkmark {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.checkbox-text {
-  transition: color 0.2s ease;
-}
-
-.checkbox-input:checked ~ .checkbox-text {
-  color: #8C4CC3;
-  font-weight: 600;
-}
-
-.loading-indicator {
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
-  color: #666;
-  font-style: italic;
-}
-
-.lesson-view {
-  max-width: 1400px; /* Увеличили для боковой панели */
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.breadcrumbs {
-  margin-bottom: 20px;
-  font-size: 14px;
-}
-
-.breadcrumbs a {
-  color: #8C4CC3;
-  text-decoration: none;
-}
-
-.breadcrumbs a:hover {
-  text-decoration: underline;
-}
-
-.separator {
-  margin: 0 8px;
-  color: #666;
-}
-
-.lesson-header {
-  margin-bottom: 30px;
-}
-
-.lesson-header h1 {
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.lesson-meta {
-  display: flex;
-  gap: 20px;
-  color: #666;
-}
-
-.completed-badge {
-  color: #4ECDC4;
-  font-weight: bold;
-}
-
-.video-section {
-  margin-bottom: 30px;
-}
-
-.video-player {
-  width: 100%;
-  max-width: 800px;
-  height: auto;
-  border-radius: 8px;
-}
-
-.no-video {
-  background: #f8f9fa;
-  border: 2px dashed #dee2e6;
-  border-radius: 12px;
-  padding: 3rem 2rem;
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.lesson-description {
-  margin-bottom: 30px;
-}
-
-.lesson-description h3 {
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.materials-section {
-  margin-bottom: 40px;
-}
-
-.materials-section h3 {
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.materials-list {
-  list-style: none;
-  padding: 0;
-}
-
-.material-item {
-  display: flex;
-  justify-content: between;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-.material-link {
-  color: #8C4CC3;
-  text-decoration: none;
-  flex-grow: 1;
-}
-
-.material-link:hover {
-  text-decoration: underline;
-}
-
-.material-date {
-  color: #666;
-  font-size: 12px;
-}
-
+/* Кнопки навигации */
 .lesson-navigation {
   display: flex;
   justify-content: space-between;
@@ -800,26 +678,7 @@ const toggleCompletion = async () => {
   transform: translateY(-1px);
 }
 
-.loading-state,
-.error-state {
-  text-align: center;
-  padding: 60px 20px;
-}
-
-.error-state {
-  color: #FF6B6B;
-}
-
-.retry-button {
-  margin-top: 15px;
-  padding: 10px 20px;
-  background: #8C4CC3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
+/* Модальное окно теста */
 .test-modal {
   position: fixed;
   top: 0;
@@ -855,26 +714,42 @@ const toggleCompletion = async () => {
   color: #666;
 }
 
-.close-btn:hover {
-  color: #333;
+/* Состояния загрузки и ошибок */
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
 }
 
+.error-state {
+  color: #FF6B6B;
+}
+
+.retry-button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: #8C4CC3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Адаптивность */
 @media (max-width: 768px) {
-  .completion-checkbox {
-    padding: 1rem;
+  .lesson-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
   
-  .checkbox-label {
-    font-size: 1rem;
+  .lessons-sidebar {
+    position: static;
+    max-height: none;
+    order: 2;
   }
   
-  .checkmark {
-    width: 20px;
-    height: 20px;
-  }
-  
-  .lesson-view {
-    padding: 15px;
+  .lesson-content {
+    order: 1;
   }
   
   .lesson-navigation {
