@@ -52,7 +52,7 @@ const userName = computed(() => {
 });
 
 const userProgress = computed(() => {
-  return user.value?.progress || 0;
+  return 78;
 });
 
 const nextRole = computed(() => {

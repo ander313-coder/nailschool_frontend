@@ -15,7 +15,7 @@
       <div class="stat-icon"><img src="/src/assets/styles/icons/structure.svg" alt="Пройдено уроков"></div>
       <div class="stat-content">
         <h3>Пройдено уроков</h3>
-        <p class="stat-number">{{ completedLessonsCount }}</p>
+        <p class="stat-number">8</p>
         <p class="stat-label">успешно завершено</p>
       </div>
     </div>
@@ -60,9 +60,8 @@ const { user } = storeToRefs(authStore);
 // Демо-данные для статистики
 const demoStats = {
   completedLessons: 12,
-  upcomingTests: 2,
+  upcomingTests: 1,
   averageProgress: 78,
-  learningStreak: 7 // дней подряд
 };
 
 // Вычисляем общую статистику (реальные + демо данные)
@@ -75,19 +74,14 @@ const completedLessonsCount = computed(() => {
 });
 
 const averageProgress = computed(() => {
-  return user?.value?.progress || demoStats.averageProgress;
+  return demoStats.averageProgress;
 });
 
 // Считаем предстоящие тесты (реальные + демо)
 const upcomingTests = computed(() => {
-  const realTests = Math.max(0, 3 - (totalCompletedTests.value || 0));
-  return realTests > 0 ? realTests : demoStats.upcomingTests;
+  return demoStats.upcomingTests;
 });
 
-// Добавим вычисление текущей серии обучения
-const currentStreak = computed(() => {
-  return demoStats.learningStreak;
-});
 </script>
 
 <style scoped>

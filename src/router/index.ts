@@ -89,7 +89,10 @@ const router = createRouter({
       name: 'design-system',
       component: () => import('@/views/DesignSystemView.vue')
     }
-  ]
+  ],
+  scrollBehavior() {
+    return { top: 0, behavior: 'smooth' }
+  }
 })
 
 export default router

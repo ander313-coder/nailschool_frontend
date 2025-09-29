@@ -153,7 +153,7 @@
               <div class="lesson-title">{{ lessonItem.title }}</div>
               <div class="lesson-meta">
                 <span class="duration">{{ lessonItem.duration_minutes }} мин</span>
-                <span v-if="lessonItem.has_test" class="test-badge">Тест</span>
+                <span v-if="lessonItem.has_test" class="test-badge">📝 Тест</span>
                 <span v-if="lessonItem.has_homework" class="homework-badge">ДЗ</span>
               </div>
             </div>
