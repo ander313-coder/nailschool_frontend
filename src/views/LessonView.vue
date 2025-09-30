@@ -115,8 +115,7 @@
             Сохранение...
           </div>
         </div>
-
-        <HomeworkComponent v-if="lesson?.has_homework" :lesson-id="lessonId"/>
+        <HomeworkComponent v-if="showHomework" :lesson-id="lessonId"/>
       </div>
 
       <!-- Правая колонка - боковая панель с уроками -->
@@ -362,6 +361,9 @@ const toggleCompletion = async () => {
     console.log('🔚 Завершение переключения, финальное состояние:', localCompleted.value);
   }
 };
+const showHomework = computed(() => {
+  return lessonDetail.value?.has_homework || false;
+});
 
 </script>
 

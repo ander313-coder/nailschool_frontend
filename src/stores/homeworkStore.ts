@@ -40,7 +40,22 @@ export const useHomeworkStore = defineStore('homework', () => {
       isLoading.value = false;
     }
   };
-
+  const createOrUpdateHomework = async (submission: HomeworkSubmission): Promise<Homework> => {
+    isLoading.value = true;
+    error.value = null;
+    
+    try {
+      const homework = await homeworkService.createOrUpdateHomework(submission);
+      currentHomework.value = homework;
+      return homework;
+    } catch (err) {
+      error.value = 'Ошибка при отправке домашнего задания';
+      console.error('Error creating/updating homework:', err);
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  };
   // Сбросить состояние
   const reset = () => {
     currentHomework.value = null;
@@ -53,6 +68,7 @@ export const useHomeworkStore = defineStore('homework', () => {
     error,
     fetchHomeworkForLesson,
     submitHomework,
+    createOrUpdateHomework,
     reset
   };
 });

@@ -106,6 +106,7 @@ const removeFile = (index: number) => {
   selectedFiles.value.splice(index, 1);
 };
 
+// ЗАМЕНЯЕМ метод submitHomework
 const submitHomework = async () => {
   isSubmitting.value = true;
   
@@ -116,11 +117,19 @@ const submitHomework = async () => {
       files: selectedFiles.value
     };
     
-    await homeworkStore.submitHomework(submission);
+    // Используем новый метод вместо submitHomework
+    await homeworkStore.createOrUpdateHomework(submission);
+    
+    // Очищаем форму
     selectedFiles.value = [];
     comment.value = '';
+    
+    // Показываем сообщение об успехе
+    alert('Домашнее задание успешно отправлено!');
+    
   } catch (err) {
     console.error('Homework submission failed:', err);
+    alert('Ошибка при отправке домашнего задания');
   } finally {
     isSubmitting.value = false;
   }

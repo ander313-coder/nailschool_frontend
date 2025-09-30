@@ -1,14 +1,9 @@
 <template>
   <div class="homework-container">
-    <!-- Пытаемся загрузить реальное ДЗ -->
+    <!-- Реальная форма ДЗ -->
     <HomeworkUpload 
-      v-if="!isLoading && hasRealHomework" 
+      v-if="!isLoading" 
       :lesson-id="lessonId" 
-    />
-    
-    <!-- Демо-версия если реального ДЗ нет -->
-    <HomeworkDemo 
-      v-else-if="!isLoading && !hasRealHomework" 
     />
     
     <!-- Индикатор загрузки -->
@@ -19,10 +14,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useHomeworkStore } from '@/stores/homeworkStore';
 import HomeworkUpload from './HomeworkUpload.vue';
-import HomeworkDemo from './HomeworkDemo.vue';
 
 const props = defineProps<{
   lessonId: number;
@@ -31,19 +25,11 @@ const props = defineProps<{
 const homeworkStore = useHomeworkStore();
 const isLoading = ref(true);
 
-// Проверяем, есть ли реальный функционал ДЗ
-const hasRealHomework = computed(() => {
-  // Пока всегда возвращаем false для демо
-  // В реальной версии можно проверять доступность API
-  return false;
-});
-
 onMounted(async () => {
   try {
-    // Пытаемся загрузить реальное ДЗ
     await homeworkStore.fetchHomeworkForLesson(props.lessonId);
   } catch (error) {
-    console.log('Реальный функционал ДЗ недоступен, показываем демо');
+    console.log('ДЗ для этого урока не найдено');
   } finally {
     isLoading.value = false;
   }
@@ -51,6 +37,20 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.no-homework {
+  margin: 2rem 0;
+  padding: 2rem;
+  text-align: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.no-homework-content h3 {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
 .loading-homework {
   text-align: center;
   padding: 2rem;

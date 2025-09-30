@@ -20,7 +20,7 @@ export const homeworkService = {
     formData.append('lesson', submission.lesson_id.toString());
     formData.append('comment', submission.comment);
     
-    submission.files.forEach((file, index) => {
+    submission.files.forEach((file) => {
       formData.append(`files`, file);
     });
 
@@ -37,7 +37,7 @@ export const homeworkService = {
   async addFilesToHomework(homeworkId: number, files: File[]): Promise<Homework> {
     const formData = new FormData();
     
-    files.forEach((file, index) => {
+    files.forEach((file) => {
       formData.append(`files`, file);
     });
 
@@ -48,5 +48,24 @@ export const homeworkService = {
     });
     
     return response.data;
-  }
+  },
+
+  // Создать или обновить ДЗ
+  async createOrUpdateHomework(submission: HomeworkSubmission): Promise<Homework> {
+    try {
+      // Сначала проверяем есть ли существующее ДЗ
+      const existingHomework = await this.getHomeworkForLesson(submission.lesson_id);
+      
+      if (existingHomework) {
+        // Обновляем существующее ДЗ - добавляем файлы
+        return await this.addFilesToHomework(existingHomework.id, submission.files);
+      } else {
+        // Создаем новое ДЗ
+        return await this.submitHomework(submission);
+      }
+    } catch (error) {
+      console.error('Error in createOrUpdateHomework:', error);
+      throw error;
+    }
+  },
 };
