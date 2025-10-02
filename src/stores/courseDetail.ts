@@ -24,39 +24,42 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
   });
 
   // Загрузка деталей курса и уроков
-  const fetchCourseDetail = async (courseId: number) => {
-    isLoading.value = true;
-    error.value = null;
+const fetchCourseDetail = async (courseId: number) => {
+  isLoading.value = true;
+  error.value = null;
 
-    try {
-      console.log(`🔄 Loading course details for ID: ${courseId}`);
-      
-      // Загружаем курс и уроки параллельно
-      const [courseData, lessonsData] = await Promise.all([
-        courseService.getCourse(courseId),
-        lessonService.getCourseLessons(courseId) 
-      ]);
+  try {
+    console.log(`🔄 Loading course details for ID: ${courseId}`);
+    
+    // Загружаем курс и уроки параллельно
+    const [courseData, lessonsResponse] = await Promise.all([
+      courseService.getCourse(courseId),
+      lessonService.getCourseLessons(courseId) 
+    ]);
 
-      course.value = courseData;
-      lessons.value = lessonsData;
+    course.value = courseData;
+    
+    // ИСПРАВЛЯЕМ: извлекаем lessons из ответа
+    const lessonsData = lessonsResponse.lessons || [];
+    lessons.value = lessonsData;
 
-      // Вычисляем прогресс на основе новых данных
-      updateProgress(lessonsData);
+    // Вычисляем прогресс на основе новых данных
+    updateProgress(lessonsData);
 
-      console.log(`✅ Course details loaded:`, {
-        course: courseData?.title,
-        lessons: lessonsData.length,
-        progress: progress.value.progress_percent
-      });
+    console.log(`✅ Course details loaded:`, {
+      course: courseData?.title,
+      lessons: lessonsData.length,
+      progress: progress.value.progress_percent
+    });
 
-    } catch (err: any) {
-      error.value = err.response?.data?.detail || `Не удалось загрузить данные курса ${courseId}`;
-      console.error(`❌ Error loading course ${courseId}:`, err);
-    } finally {
-      isLoading.value = false;
-    }
-  };
-  
+  } catch (err: any) {
+    error.value = err.response?.data?.detail || `Не удалось загрузить данные курса ${courseId}`;
+    console.error(`❌ Error loading course ${courseId}:`, err);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
   // Загрузка деталей конкретного урока
   const fetchLessonDetail = async (lessonId: number) => {
   isLoading.value = true;

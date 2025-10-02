@@ -88,6 +88,12 @@ const router = createRouter({
       path: '/design-system',
       name: 'design-system',
       component: () => import('@/views/DesignSystemView.vue')
+    },
+    {
+    path: '/test/:testId', 
+    name: 'Test',
+    component: () => import('@/components/TestComponent.vue'),
+    meta: { requiresAuth: true }
     }
   ],
   scrollBehavior() {

@@ -27,6 +27,12 @@ export interface Course {
   lesson_count?: number;
 }
 
+export interface CourseLessonsResponse {
+  course_id: number;
+  title: string;
+  lessons: Lesson[];
+}
+
 // Типы для уроков
 export interface Lesson {
   id: number;
@@ -38,6 +44,13 @@ export interface Lesson {
   completed: boolean;
   is_unlocked: boolean; 
   test_id?: number | null; 
+}
+
+export interface LessonService {
+  getCourseLessons(courseId: number): Promise<CourseLessonsResponse>;
+  getLessonDetail(lessonId: number): Promise<LessonDetail>;
+  completeLesson(lessonId: number): Promise<void>;
+  uncompleteLesson(lessonId: number): Promise<void>;
 }
 
 export interface LessonDetail {

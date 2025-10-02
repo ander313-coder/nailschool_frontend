@@ -1,17 +1,12 @@
 import apiClient from '@/api/client';
-import type { Lesson, LessonDetail } from '@/types/api';
+import type { CourseLessonsResponse, LessonDetail } from '@/types/api';
 
 export const lessonService = {
-  // Получить уроки курса 
-  async getCourseLessons(courseId: number): Promise<Lesson[]> {
-    try {
-      const response = await apiClient.get(`/courses/${courseId}/lessons/`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching lessons for course ${courseId}:`, error);
-      throw error;
-    }
-  },
+  // Получить уроки курса
+  async getCourseLessons(courseId: number): Promise<CourseLessonsResponse> {
+    const response = await apiClient.get(`/courses/${courseId}/lessons/`);
+    return response.data;
+  },  
 
   // Получить детальную информацию об уроке 
   async getLessonDetail(lessonId: number): Promise<LessonDetail> {

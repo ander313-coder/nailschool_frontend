@@ -155,12 +155,10 @@
                 <span v-if="lessonItem.has_homework" class="homework-badge">ДЗ</span>
               </div>
             </div>
-
           </div>
         </div>
       </div>
     </div>
-
   </div> 
 
   <!-- Состояния загрузки и ошибок -->
@@ -172,6 +170,28 @@
     <p>{{ error }}</p>
     <button @click="retryLoading" class="retry-button">Попробовать снова</button>
   </div>
+
+  <!-- Модальное окно теста -->
+  <div v-if="showTestModal" class="test-modal-overlay" @click.self="closeTestModal">
+    <div class="test-modal">
+      <!-- Заголовок модального окна -->
+      <div class="test-modal-header">
+        <h2>📝 Тестирование</h2>
+        <button class="close-btn" @click="closeTestModal">×</button>
+      </div>
+
+      <!-- Контент теста -->
+      <div class="test-modal-content">
+        <TestModal 
+          v-if="currentTestId"
+          :test-id="currentTestId"
+          :lesson-id="lessonId"
+          @completed="handleTestCompleted"
+          @closed="closeTestModal"
+        />
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -179,6 +199,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCourseDetailStore } from '@/stores/courseDetail';
 import HomeworkComponent from '@/components/HomeworkComponent.vue'; 
+import TestModal from '@/components/TestModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -249,7 +270,6 @@ const handleTimeUpdate = () => {
 };
 
 // Навигация
-
 const goToLesson = (lessonId: number) => {
   router.push(`/courses/${courseId.value}/lesson/${lessonId}`);
 };
@@ -268,22 +288,31 @@ const goToNextLesson = () => {
 
 const realTestId = computed(() => {
   const currentLesson = lessons.value.find(l => l.id === lessonId.value);
-  return currentLesson?.test_id || null;
+  return (currentLesson as any)?.test_id || null;
 });
+console.log('realTestId:', realTestId.value); 
 
+const showTestModal = ref(false);
+const currentTestId = ref<number | null>(null);
+
+// Тесты
 const goToTest = () => {
-  const currentLesson = lessons.value.find(l => l.id === lessonId.value);
-  console.log('Текущий урок:', currentLesson);
-  console.log('test_id:', (currentLesson as any)?.test_id);
-  
-  const testId = (currentLesson as any)?.test_id;
-  if (testId) {
-    console.log('Переходим к тесту:', testId);
-    router.push(`/test/${testId}`);
+  if (realTestId.value) {
+    currentTestId.value = realTestId.value;
+    showTestModal.value = true;
   } else {
-    console.log('Тест не найден для урока:', lessonId.value);
     alert('Для этого урока тест не предусмотрен');
   }
+};
+
+const closeTestModal = () => {
+  showTestModal.value = false;
+  currentTestId.value = null;
+};
+
+const handleTestCompleted = (result: any) => {
+  console.log('Тест завершен:', result);
+  closeTestModal();
 };
 
 const goToCourse = () => {
@@ -677,40 +706,79 @@ const showHomework = computed(() => {
   transform: translateY(-1px);
 }
 
-/* Модальное окно теста */
-.test-modal {
+/* Стили для модального окна */
+.test-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
-.modal-content {
+.test-modal {
   background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  max-width: 90%;
-  max-height: 90%;
-  overflow-y: auto;
-  position: relative;
-  width: 800px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.test-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #8C4CC3 0%, #6a3093 100%);
+  color: white;
+}
+
+.test-modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
 }
 
 .close-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
   background: none;
   border: none;
+  color: white;
   font-size: 2rem;
   cursor: pointer;
-  color: #666;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.test-modal-content {
+  max-height: calc(90vh - 80px);
+  overflow-y: auto;
 }
 
 /* Состояния загрузки и ошибок */
