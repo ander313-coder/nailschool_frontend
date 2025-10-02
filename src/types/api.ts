@@ -37,6 +37,7 @@ export interface Lesson {
   has_homework: boolean; 
   completed: boolean;
   is_unlocked: boolean; 
+  test_id?: number | null; 
 }
 
 export interface LessonDetail {
@@ -58,6 +59,9 @@ export interface LessonMaterial {
   name: string;
   file: string;
   uploaded_at: string;
+  url?: string;        
+  title?: string;      
+  description?: string; 
 }
 
 // Типы для прогресса

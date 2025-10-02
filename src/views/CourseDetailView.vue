@@ -233,15 +233,24 @@ const sortedLessons = computed(() => {
 const nextLesson = computed(() => {
   const lessonList = sortedLessons.value;
   if (!lessonList || lessonList.length === 0) return null;
-  
-  return lessonList.find(lesson => {
+  let next = lessonList.find(lesson => {
     return !lesson.completed && lesson.is_unlocked !== false;
-  }) || null;
+  });
+  if (!next) {
+    next = lessonList.find(lesson => !lesson.completed);
+  }
+  if (!next) {
+    return null;
+  }
+  return next;
 });
 
 const continueButtonText = computed(() => {
   const lesson = nextLesson.value;
   if (!lesson) return 'Курс завершен 🎉';
+  if (lesson.is_unlocked === false) {
+    return 'Продолжить обучение';
+  }
   return `Продолжить: ${lesson.title || 'Следующий урок'}`;
 });
 
@@ -527,6 +536,7 @@ const continueLearning = () => {
   background: var(--gray-300);
   cursor: not-allowed;
   opacity: 0.7;
+  background: var(--primary);
 }
 
 /* Список уроков */

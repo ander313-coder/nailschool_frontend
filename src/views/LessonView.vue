@@ -52,10 +52,9 @@
           <h3>Материалы для скачивания</h3>
           <ul class="materials-list">
             <li v-for="material in lessonDetail.materials" :key="material.id" class="material-item">
-              <a :href="material.file" download class="material-link">
-                📎 {{ material.name }}
+              <a :href="material.url" download :title="material.title || material.name" class="material-link">
+                📎 {{ material.name || material.title }}
               </a>
-              <span class="material-date">{{ formatDate(material.uploaded_at) }}</span>
             </li>
           </ul>
         </div>
@@ -162,16 +161,6 @@
       </div>
     </div>
 
-    <!-- Модальное окно теста -->
-    <div v-if="showTest" class="test-modal">
-      <div class="modal-content">
-        <TestComponent 
-          :test-id="getTestIdForLesson()" 
-          :lesson-id="lessonId"
-          @close="closeTest"
-        />
-      </div>
-    </div>
   </div> 
 
   <!-- Состояния загрузки и ошибок -->
@@ -190,7 +179,6 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCourseDetailStore } from '@/stores/courseDetail';
 import HomeworkComponent from '@/components/HomeworkComponent.vue'; 
-import TestComponent from '@/components/TestComponent.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -205,7 +193,7 @@ const lessons = computed(() => courseDetailStore.lessons);
 const isLoading = computed(() => courseDetailStore.isLoading);
 const error = computed(() => courseDetailStore.error);
 const progress = computed(() => courseDetailStore.progress);
-const showTest = ref(false);
+
 
 const currentLessonIndex = computed(() => 
   lessons.value.findIndex(lesson => lesson.id === lessonId.value)
@@ -226,9 +214,16 @@ const lesson = computed(() =>
   lessons.value.find(l => l.id === lessonId.value)
 );
 
-// Загрузка данных урока
+// Загрузка данных урока И списка уроков курса
 const loadLessonData = async () => {
-  await courseDetailStore.fetchLessonDetail(lessonId.value);
+  try {
+    await Promise.all([
+      courseDetailStore.fetchLessonDetail(lessonId.value),
+      courseDetailStore.fetchCourseDetail(courseId.value)
+    ]);
+  } catch (error) {
+    console.error('Error loading lesson data:', error);
+  }
 };
 
 onMounted(() => {
@@ -271,16 +266,24 @@ const goToNextLesson = () => {
   }
 };
 
+const realTestId = computed(() => {
+  const currentLesson = lessons.value.find(l => l.id === lessonId.value);
+  return currentLesson?.test_id || null;
+});
+
 const goToTest = () => {
-  showTest.value = true;
-};
-
-const closeTest = () => {
-  showTest.value = false;
-};
-
-const getTestIdForLesson = () => {
-  return lessonId.value * 10; // Простая демо-логика
+  const currentLesson = lessons.value.find(l => l.id === lessonId.value);
+  console.log('Текущий урок:', currentLesson);
+  console.log('test_id:', (currentLesson as any)?.test_id);
+  
+  const testId = (currentLesson as any)?.test_id;
+  if (testId) {
+    console.log('Переходим к тесту:', testId);
+    router.push(`/test/${testId}`);
+  } else {
+    console.log('Тест не найден для урока:', lessonId.value);
+    alert('Для этого урока тест не предусмотрен');
+  }
 };
 
 const goToCourse = () => {
@@ -289,12 +292,6 @@ const goToCourse = () => {
 
 const retryLoading = () => {
   loadLessonData();
-};
-
-
-// Вспомогательные функции
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('ru-RU');
 };
 
 // Локальное состояние для чекбокса

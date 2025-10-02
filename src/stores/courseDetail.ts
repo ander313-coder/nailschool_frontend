@@ -34,7 +34,7 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
       // Загружаем курс и уроки параллельно
       const [courseData, lessonsData] = await Promise.all([
         courseService.getCourse(courseId),
-        lessonService.getCourseLessons(courseId) // Новый метод!
+        lessonService.getCourseLessons(courseId) 
       ]);
 
       course.value = courseData;
@@ -56,6 +56,7 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
       isLoading.value = false;
     }
   };
+  
   // Загрузка деталей конкретного урока
   const fetchLessonDetail = async (lessonId: number) => {
   isLoading.value = true;
