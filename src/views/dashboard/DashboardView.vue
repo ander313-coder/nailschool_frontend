@@ -14,55 +14,81 @@
 
     <!-- Основной контент -->
     <template v-else>
-      <!-- Компонент с прогрессом -->
-      <DashboardStatus />
-      <!-- Карточки статистики -->
-      <StatsCards />
-      <!-- Компонент с курсами -->
-      <UserCourses />
+      <!-- Для студентов -->
+      <template v-if="userRole === 'TRAINEE' || userRole === 'MASTER'">
+        <DashboardStatus />
+        <StatsCards />
+        <UserCourses />
+      </template>
+
+      <!-- Для преподавателей -->
+      <template v-else-if="userRole === 'INSTRUCTOR'">
+        <InstructorDashboardStatus />
+        <InstructorStatsCards />
+        <InstructorUserCourses />
+      </template>
     </template>
   </DashboardLayout>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useAuthStore } from '@/stores/auth';
+import { useCoursesStore } from '@/stores/courses';
+import { useInstructorStore } from '@/stores/instructorStore';
 import DashboardLayout from './DashboardLayout.vue';
+
+// Компоненты для студентов
 import DashboardStatus from '@/components/dashboard/DashboardStatus.vue';
 import UserCourses from '@/components/dashboard/UserCourses.vue';
 import StatsCards from '@/components/dashboard/StatsCards.vue';
-import { useCoursesStore } from '@/stores/courses';
 
-// тестирование API
-import { testEndpoints } from '@/utils/apiTester';
+// Компоненты для преподавателей
+import InstructorDashboardStatus from '@/components/dashboard/InstructorDashboardStatus.vue';
+import InstructorUserCourses from '@/components/dashboard/InstructorUserCourses.vue';
+import InstructorStatsCards from '@/components/dashboard/InstructorStatsCards.vue';
 
+const authStore = useAuthStore();
 const coursesStore = useCoursesStore();
-const apiTestResult = ref<string>('');
-const localLoading = ref(true); // Локальное состояние загрузки
+const instructorStore = useInstructorStore();
 
-// Используем вычисляемые свойства для синхронизации состояний
+const localLoading = ref(true);
+const error = ref<string | null>(null);
+
+// Определяем роль пользователя
+const userRole = computed(() => authStore.user?.role || 'TRAINEE');
+
+// Состояния загрузки
 const isLoading = computed(() => coursesStore.isLoading || localLoading.value);
-const error = computed(() => coursesStore.error);
 
-const testAPI = async () => {
-  apiTestResult.value = 'Testing...';
-  await testEndpoints();
-  apiTestResult.value = 'Check browser console for results';
+const loadData = async () => {
+  localLoading.value = true;
+  error.value = null;
+  
+  try {
+    if (userRole.value === 'INSTRUCTOR') {
+      // Для преподавателя загружаем данные преподавателя
+      await Promise.all([
+        coursesStore.fetchUserCourses(),
+        instructorStore.loadPendingHomeworks(),
+        instructorStore.loadPendingTextAnswers()
+      ]);
+    } else {
+      // Для студентов загружаем обычные данные
+      await coursesStore.fetchUserCourses();
+    }
+  } catch (err: any) {
+    console.error('Error loading dashboard data:', err);
+    error.value = err.message || 'Ошибка загрузки данных';
+  } finally {
+    localLoading.value = false;
+  }
 };
 
 onMounted(() => {
   loadData();
 });
 
-const loadData = async () => {
-  localLoading.value = true;
-  try {
-    await coursesStore.fetchUserCourses();
-  } catch (error) {
-    console.error('Error loading dashboard data:', error);
-  } finally {
-    localLoading.value = false;
-  }
-};
 </script>
 
 <style scoped>
@@ -150,6 +176,7 @@ const loadData = async () => {
   border-radius: 6px;
   margin-top: 16px;
   cursor: pointer;
+  font-weight: 500;
 }
 
 .retry-button:hover {
@@ -167,18 +194,18 @@ const loadData = async () => {
 
 /* Адаптивность */
 @media (max-width: 768px) {
-  .actions-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .dashboard {
+    padding: 16px;
   }
 }
 
 @media (max-width: 480px) {
-  .actions-grid {
-    grid-template-columns: 1fr;
+  .dashboard {
+    padding: 12px;
   }
   
-  .action-card {
-    padding: 20px;
+  .loading-state, .error-state {
+    padding: 40px 20px;
   }
 }
 </style>
