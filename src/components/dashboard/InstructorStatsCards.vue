@@ -2,7 +2,7 @@
   <div class="stats-cards">
     <!-- Карточка ДЗ на проверку -->
     <div class="stat-card">
-      <div class="stat-icon">📝</div>
+      <div class="stat-icon"><span>📋</span></div>
       <div class="stat-content">
         <h3>ДЗ на проверку</h3>
         <p class="stat-number">{{ pendingHomeworksCount }}</p>
@@ -12,7 +12,7 @@
 
     <!-- Карточка текстовых ответов -->
     <div class="stat-card">
-      <div class="stat-icon">✏️</div>
+      <div class="stat-icon"><span>📝</span></div>
       <div class="stat-content">
         <h3>Ответы в тестах</h3>
         <p class="stat-number">{{ pendingTextAnswersCount }}</p>
@@ -22,7 +22,7 @@
 
     <!-- Карточка активных студентов -->
     <div class="stat-card">
-      <div class="stat-icon">👥</div>
+      <div class="stat-icon"><span>👥</span></div>
       <div class="stat-content">
         <h3>Активных студентов</h3>
         <p class="stat-number">{{ activeStudentsCount }}</p>
@@ -32,7 +32,7 @@
 
     <!-- Карточка проверенных работ -->
     <div class="stat-card">
-      <div class="stat-icon">✅</div>
+      <div class="stat-icon"><span>✅</span></div>
       <div class="stat-content">
         <h3>Проверено работ</h3>
         <p class="stat-number">{{ reviewedWorksCount }}</p>
@@ -117,6 +117,7 @@ const reviewedWorksCount = computed(() => instructorStore.homeworksByStatus.APPR
   font-weight: 500;
 }
 
+/* Адаптивность */
 @media (max-width: 768px) {
   .stats-cards {
     grid-template-columns: repeat(2, 1fr);
@@ -126,6 +127,20 @@ const reviewedWorksCount = computed(() => instructorStore.homeworksByStatus.APPR
 @media (max-width: 480px) {
   .stats-cards {
     grid-template-columns: 1fr;
+  }
+  
+  .stat-card {
+    padding: 20px;
+  }
+  
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    margin-right: 12px;
+  }
+  
+  .stat-number {
+    font-size: 28px;
   }
 }
 </style>

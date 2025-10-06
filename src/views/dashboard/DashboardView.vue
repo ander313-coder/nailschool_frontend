@@ -5,90 +5,120 @@
       <p>Загрузка данных...</p>
     </div>
 
+    <!-- Состояние ошибки -->
+    <div v-else-if="error" class="error-state">
+      <p>Ошибка загрузки данных: {{ error }}</p>
+      <button @click="loadData" class="retry-button">Попробовать снова</button>
+    </div>
+
     <!-- Основной контент -->
-    <div v-else class="dashboard-content">
-      <div class="dashboard-header">
-        <h1>Добро пожаловать, {{ authStore.user?.username }}!</h1>
-        <p>Ваша роль: {{ userRoleDisplay }}</p>
-      </div>
-
+    <template v-else>
       <!-- Для преподавателей -->
-      <div v-if="authStore.user?.role === 'INSTRUCTOR'" class="instructor-section">
-        <h2>Панель преподавателя</h2>
-        
-        <div class="stats">
-          <div class="stat-card">
-            <h3>ДЗ на проверку</h3>
-            <p class="stat-number">{{ instructorStore.pendingHomeworksCount }}</p>
-          </div>
-          <div class="stat-card">
-            <h3>Ответы в тестах</h3>
-            <p class="stat-number">{{ instructorStore.pendingTextAnswersCount }}</p>
-          </div>
+      <template v-if="authStore.user?.role === 'INSTRUCTOR'">
+        <!-- Заголовок дашборда -->
+        <div class="dashboard-header">
+          <h1>Панель преподавателя</h1>
+          <p>Управление курсами и проверка работ</p>
         </div>
 
-        <div class="actions">
-          <button @click="showAlert('Проверить ДЗ')" class="action-btn">
-            📋 Проверить ДЗ
-          </button>
-          <button @click="showAlert('Текстовые ответы')" class="action-btn">
-            📝 Текстовые ответы
-          </button>
+        <!-- Карточки статистики -->
+        <div class="stats-section">
+          <InstructorStatsCards />
         </div>
-      </div>
+
+        <!-- Быстрые действия -->
+        <div class="quick-actions">
+          <h2>Быстрые действия</h2>
+          <div class="actions-grid">
+            <div class="action-card" @click="goToPendingHomeworks">
+              <div class="action-icon">📋</div>
+              <div class="action-text">Проверить ДЗ</div>
+              <div class="action-badge" v-if="instructorStore.pendingHomeworksCount > 0">
+                {{ instructorStore.pendingHomeworksCount }}
+              </div>
+            </div>
+
+            <div class="action-card" @click="goToTextAnswers">
+              <div class="action-icon">📝</div>
+              <div class="action-text">Текстовые ответы</div>
+              <div class="action-badge" v-if="instructorStore.pendingTextAnswersCount > 0">
+                {{ instructorStore.pendingTextAnswersCount }}
+              </div>
+            </div>
+
+            <router-link to="/courses" class="action-card">
+              <div class="action-icon">🎓</div>
+              <div class="action-text">Мои курсы</div>
+            </router-link>
+
+            <router-link to="/profile" class="action-card">
+              <div class="action-icon">👤</div>
+              <div class="action-text">Профиль</div>
+            </router-link>
+          </div>
+        </div>
+      </template>
 
       <!-- Для студентов -->
-      <div v-else class="student-section">
-        <h2>Мои курсы</h2>
-        <p>Количество активных курсов: {{ coursesStore.courses.length }}</p>
-        <div class="actions">
-          <router-link to="/my-courses" class="action-btn">
-            📚 Мои курсы
-          </router-link>
-          <router-link to="/courses" class="action-btn">
-            🔍 Все курсы
-          </router-link>
-        </div>
-      </div>
-    </div>
+      <template v-else>
+        <!-- Компонент с прогрессом -->
+        <DashboardStatus />
+        <!-- Карточки статистики -->
+        <StatsCards />
+        <!-- Компонент с курсами -->
+        <UserCourses />
+      </template>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useInstructorStore } from '../../stores/instructorStore'
 import { useCoursesStore } from '../../stores/courses'
+
+// Компоненты для студентов
+import DashboardStatus from '../../components/dashboard/DashboardStatus.vue'
+import UserCourses from '../../components/dashboard/UserCourses.vue'
+import StatsCards from '../../components/dashboard/StatsCards.vue'
+
+// Компоненты для преподавателей
+import InstructorStatsCards from '../../components/dashboard/InstructorStatsCards.vue'
 
 const authStore = useAuthStore()
 const instructorStore = useInstructorStore()
 const coursesStore = useCoursesStore()
 
 const isLoading = ref(true)
+const error = ref<string | null>(null)
 
-const userRoleDisplay = computed(() => {
-  const roleMap = {
-    'TRAINEE': 'Стажер',
-    'MASTER': 'Мастер', 
-    'INSTRUCTOR': 'Инструктор'
-  }
-  return authStore.user ? roleMap[authStore.user.role] || authStore.user.role : 'Неизвестно'
-})
+const goToPendingHomeworks = () => {
+  alert('Страница проверки ДЗ будет создана позже')
+}
 
-const showAlert = (message: string) => {
-  alert(`${message} - функционал в разработке`)
+const goToTextAnswers = () => {
+  alert('Страница текстовых ответов будет создана позже')
 }
 
 const loadData = async () => {
   try {
+    isLoading.value = true
+    error.value = null
+    
+    console.log('🔄 Загрузка данных дашборда...')
+    
     if (authStore.user?.role === 'INSTRUCTOR') {
       await instructorStore.loadPendingHomeworks()
       await instructorStore.loadPendingTextAnswers()
+      console.log('✅ Данные преподавателя загружены')
     } else {
       await coursesStore.fetchUserCourses()
+      console.log('✅ Курсы студента загружены')
     }
-  } catch (error) {
-    console.error('Ошибка загрузки данных:', error)
+  } catch (err: any) {
+    console.error('❌ Ошибка загрузки данных:', err)
+    error.value = err.message || 'Не удалось загрузить данные'
   } finally {
     isLoading.value = false
   }
@@ -104,12 +134,6 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-}
-
-.loading-state {
-  text-align: center;
-  padding: 60px;
-  color: #666;
 }
 
 .dashboard-header {
@@ -128,68 +152,106 @@ onMounted(() => {
   font-size: 16px;
 }
 
-.instructor-section, .student-section {
-  background: white;
-  padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.quick-actions {
+  margin-top: 40px;
 }
 
-.stats {
+.quick-actions h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.actions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin: 20px 0;
+  gap: 16px;
 }
 
-.stat-card {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  text-align: center;
+.action-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  cursor: pointer;
 }
 
-.stat-card h3 {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.stat-number {
-  font-size: 32px;
-  font-weight: 700;
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-color: #8C4CC3;
   color: #8C4CC3;
 }
 
-.actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 20px;
+.action-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
 }
 
-.action-btn {
+.action-text {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.action-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #FF6B6B;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.loading-state, .error-state {
+  text-align: center;
+  padding: 60px;
+  color: #666;
+}
+
+.retry-button {
   background: #8C4CC3;
   color: white;
   border: none;
-  padding: 12px 20px;
+  padding: 10px 20px;
   border-radius: 6px;
-  text-decoration: none;
-  font-weight: 500;
+  margin-top: 16px;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
-.action-btn:hover {
+.retry-button:hover {
   background: #7b3fb3;
 }
 
+/* Адаптивность */
 @media (max-width: 768px) {
-  .stats {
+  .actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .actions-grid {
     grid-template-columns: 1fr;
   }
   
-  .actions {
-    flex-direction: column;
+  .action-card {
+    padding: 20px;
   }
 }
 </style>
