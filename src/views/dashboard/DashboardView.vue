@@ -30,7 +30,7 @@
         <div class="quick-actions">
           <h2>Быстрые действия</h2>
           <div class="actions-grid">
-            <div class="action-card" @click="goToPendingHomeworks">
+            <div class="action-card" @click="$router.push('/instructor/homeworks')">
               <div class="action-icon">📋</div>
               <div class="action-text">Проверить ДЗ</div>
               <div class="action-badge" v-if="instructorStore.pendingHomeworksCount > 0">
@@ -56,6 +56,20 @@
               <div class="action-text">Профиль</div>
             </router-link>
           </div>
+        </div>
+
+        <!-- Добавьте этот div после quick-actions -->
+        <div style="margin-top: 20px; padding: 20px; background: #f0f8ff; border-radius: 8px;">
+          <h3>Отладка маршрутов:</h3>
+          <button @click="$router.push('/instructor/homeworks')" style="margin: 5px;">
+            Тест: /instructor/homeworks
+          </button>
+          <button @click="$router.push('/instructor/text-answers')" style="margin: 5px;">
+            Тест: /instructor/text-answers
+          </button>
+          <button @click="testRoute('/instructor/homeworks')" style="margin: 5px;">
+            Тест с проверкой
+          </button>
         </div>
       </template>
 
@@ -85,6 +99,17 @@ import StatsCards from '../../components/dashboard/StatsCards.vue'
 
 // Компоненты для преподавателей
 import InstructorStatsCards from '../../components/dashboard/InstructorStatsCards.vue'
+import router from '@/router'
+
+const testRoute = (path: string) => {
+  console.log('🔄 Пытаемся перейти на:', path)
+  router.push(path).then(() => {
+    console.log('✅ Переход успешен')
+  }).catch((error) => {
+    console.error('❌ Ошибка перехода:', error)
+  })
+}
+
 
 const authStore = useAuthStore()
 const instructorStore = useInstructorStore()
@@ -92,10 +117,6 @@ const coursesStore = useCoursesStore()
 
 const isLoading = ref(true)
 const error = ref<string | null>(null)
-
-const goToPendingHomeworks = () => {
-  alert('Страница проверки ДЗ будет создана позже')
-}
 
 const goToTextAnswers = () => {
   alert('Страница текстовых ответов будет создана позже')

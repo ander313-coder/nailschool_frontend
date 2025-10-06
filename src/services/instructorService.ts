@@ -31,6 +31,24 @@ export const instructorService = {
     const url = params.toString() ? `/homework/?${params}` : '/homework/'
     const response = await apiClient.get(url)
 
+    console.log('🔍 СЫРЫЕ ДАННЫЕ ОТ API (/homework/):', response.data)
+
+    // Логируем структуру первого элемента для отладки
+    if (response.data && response.data.length > 0) {
+      console.log('📊 Структура первого ДЗ:', {
+        id: response.data[0].id,
+        user: response.data[0].user,
+        lesson: response.data[0].lesson,
+        status: response.data[0].status,
+        hasUser: !!response.data[0].user,
+        hasLesson: !!response.data[0].lesson,
+        userStructure: response.data[0].user ? Object.keys(response.data[0].user) : 'NO USER',
+        lessonStructure: response.data[0].lesson
+          ? Object.keys(response.data[0].lesson)
+          : 'NO LESSON',
+      })
+    }
+
     console.log('✅ Получены все ДЗ:', response.data)
     return response.data
   },

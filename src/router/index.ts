@@ -101,10 +101,44 @@ const router = createRouter({
       component: () => import('@/components/TestModal.vue'),
       meta: { requiresAuth: true },
     },
+    // Маршруты преподавателя
+    {
+      path: '/instructor',
+      redirect: '/instructor/homeworks',
+    },
+    {
+      path: '/instructor/homeworks',
+      name: 'instructor-homeworks',
+      component: () => import('@/views/instructor/InstructorHomeworksView.vue'),
+      meta: { requiresAuth: true, requiresInstructor: true },
+    },
+    {
+      path: '/instructor/homeworks/:id',
+      name: 'instructor-homework-review',
+      component: () => import('@/views/instructor/HomeworkReviewView.vue'),
+      meta: { requiresAuth: true, requiresInstructor: true },
+    },
+    {
+      path: '/instructor/text-answers',
+      name: 'instructor-text-answers',
+      component: () => import('@/views/instructor/TextAnswersView.vue'),
+      meta: { requiresAuth: true, requiresInstructor: true },
+    },
   ],
   scrollBehavior() {
     return { top: 0, behavior: 'smooth' }
   },
+})
+
+router.beforeEach((to, _from, next) => {
+  // Проверяем аутентификацию
+  const token = localStorage.getItem('access_token')
+
+  if (to.meta.requiresAuth && !token) {
+    next('/login')
+    return
+  }
+  next()
 })
 
 export default router
