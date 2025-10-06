@@ -2,27 +2,27 @@
   <div class="stats-cards">
     <!-- Карточка активных курсов -->
     <div class="stat-card">
-      <div class="stat-icon"><img src="/src/assets/styles/icons/school.svg" alt="Активные курсы"></div>
+      <div class="stat-icon">📚</div>
       <div class="stat-content">
         <h3>Активные курсы</h3>
-        <p class="stat-number">{{ activeCoursesCount }}</p> 
+        <p class="stat-number">{{ activeCoursesCount }}</p>
         <p class="stat-label">в процессе обучения</p>
       </div>
     </div>
 
     <!-- Карточка пройденных уроков -->
     <div class="stat-card">
-      <div class="stat-icon"><img src="/src/assets/styles/icons/structure.svg" alt="Пройдено уроков"></div>
+      <div class="stat-icon">🎯</div>
       <div class="stat-content">
         <h3>Пройдено уроков</h3>
-        <p class="stat-number">8</p>
+        <p class="stat-number">{{ completedLessonsCount }}</p>
         <p class="stat-label">успешно завершено</p>
       </div>
     </div>
 
     <!-- Карточка среднего прогресса -->
     <div class="stat-card">
-      <div class="stat-icon"><img src="/src/assets/styles/icons/practise.svg" alt="Общий прогресс"></div>
+      <div class="stat-icon">📊</div>
       <div class="stat-content">
         <h3>Общий прогресс</h3>
         <p class="stat-number">{{ averageProgress }}%</p>
@@ -32,7 +32,7 @@
 
     <!-- Карточка следующий тест -->
     <div class="stat-card">
-      <div class="stat-icon"><img src="/src/assets/styles/icons/test.svg" alt="Следующий тест"></div>
+      <div class="stat-icon">🧪</div>
       <div class="stat-content">
         <h3>Следующий тест</h3>
         <p class="stat-number">{{ upcomingTests }}</p>
@@ -43,30 +43,27 @@
 </template>
 
 <script setup lang="ts">
-import { useCoursesStore } from '@/stores/courses';
-import { useProgressStore } from '@/stores/progress';
+import { useCoursesStore } from '../../stores/courses';
+import { useProgressStore } from '../../stores/progress';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
-import { useAuthStore } from '@/stores/auth';
 
 const coursesStore = useCoursesStore();
 const progressStore = useProgressStore();
-const authStore = useAuthStore();
 
 const { courses } = storeToRefs(coursesStore);
-const { totalCompletedLessons, totalCompletedTests } = storeToRefs(progressStore);
-const { user } = storeToRefs(authStore);
+const { totalCompletedLessons } = storeToRefs(progressStore);
 
 // Демо-данные для статистики
 const demoStats = {
-  completedLessons: 12,
+  completedLessons: 8,
   upcomingTests: 1,
-  averageProgress: 78,
+  averageProgress: 65,
 };
 
-// Вычисляем общую статистику (реальные + демо данные)
+// Вычисляем общую статистику
 const activeCoursesCount = computed(() => {
-  return courses.value.length || 3; // Демо: 3 активных курса
+  return courses.value.length || 2;
 });
 
 const completedLessonsCount = computed(() => {
@@ -77,11 +74,9 @@ const averageProgress = computed(() => {
   return demoStats.averageProgress;
 });
 
-// Считаем предстоящие тесты (реальные + демо)
 const upcomingTests = computed(() => {
   return demoStats.upcomingTests;
 });
-
 </script>
 
 <style scoped>
@@ -93,15 +88,13 @@ const upcomingTests = computed(() => {
 }
 
 .stat-card {
-  background: white;
-  padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
-  gap: 16px;
-  border-left: 4px solid #8C4CC3;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
 }
 
 .stat-card:hover {
@@ -110,14 +103,15 @@ const upcomingTests = computed(() => {
 }
 
 .stat-icon {
-  font-size: 32px;
   width: 60px;
   height: 60px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #8C4CC3;
-  border-radius: 12px;
+  margin-right: 16px;
+  background: #f8f9fa;
+  font-size: 24px;
 }
 
 .stat-content {
@@ -129,43 +123,25 @@ const upcomingTests = computed(() => {
   font-weight: 600;
   color: #666;
   margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .stat-number {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
-  color: #8C4CC3;
-  margin: 0;
+  color: #333;
   line-height: 1;
+  margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 12px;
-  color: #999;
-  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .stats-cards {
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
-  
-  .stat-card {
-    padding: 20px;
-  }
-  
-  .stat-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-  }
-  
-  .stat-number {
-    font-size: 24px;
   }
 }
 

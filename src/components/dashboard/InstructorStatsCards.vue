@@ -2,7 +2,7 @@
   <div class="stats-cards">
     <!-- Карточка ДЗ на проверку -->
     <div class="stat-card">
-      <div class="stat-icon"><img src="/src/assets/styles/icons/assignment.svg" alt="ДЗ на проверку"></div>
+      <div class="stat-icon">📝</div>
       <div class="stat-content">
         <h3>ДЗ на проверку</h3>
         <p class="stat-number">{{ pendingHomeworksCount }}</p>
@@ -12,7 +12,7 @@
 
     <!-- Карточка текстовых ответов -->
     <div class="stat-card">
-      <div class="stat-icon"><img src="/src/assets/styles/icons/description.svg" alt="Текстовые ответы"></div>
+      <div class="stat-icon">✏️</div>
       <div class="stat-content">
         <h3>Ответы в тестах</h3>
         <p class="stat-number">{{ pendingTextAnswersCount }}</p>
@@ -22,7 +22,7 @@
 
     <!-- Карточка активных студентов -->
     <div class="stat-card">
-      <div class="stat-icon"><img src="/src/assets/styles/icons/people.svg" alt="Активные студенты"></div>
+      <div class="stat-icon">👥</div>
       <div class="stat-content">
         <h3>Активных студентов</h3>
         <p class="stat-number">{{ activeStudentsCount }}</p>
@@ -32,7 +32,7 @@
 
     <!-- Карточка проверенных работ -->
     <div class="stat-card">
-      <div class="stat-icon"><img src="/src/assets/styles/icons/verified.svg" alt="Проверенные работы"></div>
+      <div class="stat-icon">✅</div>
       <div class="stat-content">
         <h3>Проверено работ</h3>
         <p class="stat-number">{{ reviewedWorksCount }}</p>
@@ -44,7 +44,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useInstructorStore } from '@/stores/instructorStore';
+import { useInstructorStore } from '../../stores/instructorStore';
 
 const instructorStore = useInstructorStore();
 
@@ -52,10 +52,11 @@ const instructorStore = useInstructorStore();
 const pendingHomeworksCount = computed(() => instructorStore.pendingHomeworksCount);
 const pendingTextAnswersCount = computed(() => instructorStore.pendingTextAnswersCount);
 
-// Демо-данные (позже можно заменить на реальные)
-const activeStudentsCount = computed(() => 24); // Можно получить из API
+// Демо-данные
+const activeStudentsCount = computed(() => 24);
 const reviewedWorksCount = computed(() => instructorStore.homeworksByStatus.APPROVED.length);
 </script>
+
 <style scoped>
 .stats-cards {
   display: grid;
@@ -88,11 +89,7 @@ const reviewedWorksCount = computed(() => instructorStore.homeworksByStatus.APPR
   justify-content: center;
   margin-right: 16px;
   background: #f8f9fa;
-}
-
-.stat-icon img {
-  width: 32px;
-  height: 32px;
+  font-size: 24px;
 }
 
 .stat-content {
@@ -120,35 +117,15 @@ const reviewedWorksCount = computed(() => instructorStore.homeworksByStatus.APPR
   font-weight: 500;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .stats-cards {
     grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .stat-card {
-    padding: 20px;
   }
 }
 
 @media (max-width: 480px) {
   .stats-cards {
     grid-template-columns: 1fr;
-  }
-  
-  .stat-icon {
-    width: 50px;
-    height: 50px;
-    margin-right: 12px;
-  }
-  
-  .stat-icon img {
-    width: 24px;
-    height: 24px;
-  }
-  
-  .stat-number {
-    font-size: 28px;
   }
 }
 </style>

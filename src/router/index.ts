@@ -84,6 +84,12 @@ const router = createRouter({
       component: () => import('@/views/dashboard/SettingsView.vue'),
       meta: { requiresAuth: true },
     },
+
+    {
+      path: '/contacts',
+      name: 'contacts',
+      component: () => import('@/views/ContactsView.vue'),
+    },
     {
       path: '/design-system',
       name: 'design-system',
