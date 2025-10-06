@@ -45,10 +45,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useInstructorStore } from '@/stores/instructorStore';
-import { useCoursesStore } from '@/stores/coursesStore';
 
 const instructorStore = useInstructorStore();
-const coursesStore = useCoursesStore();
 
 // Статистика для преподавателя
 const pendingHomeworksCount = computed(() => instructorStore.pendingHomeworksCount);

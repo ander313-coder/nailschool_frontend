@@ -35,15 +35,15 @@
 import { computed, onMounted, ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useCoursesStore } from '@/stores/courses';
-import { useInstructorStore } from '@/stores/instructorStore';
-import DashboardLayout from './DashboardLayout.vue';
+import { useInstructorStore } from '../../stores/instructorStore';
+import DashboardLayout from '@/components/DashboardLayout.vue';
 
 // Компоненты для студентов
 import DashboardStatus from '@/components/dashboard/DashboardStatus.vue';
 import UserCourses from '@/components/dashboard/UserCourses.vue';
 import StatsCards from '@/components/dashboard/StatsCards.vue';
 
-// Компоненты для преподавателей
+// Компоненты для преподавателей - ПРАВИЛЬНЫЕ ПУТИ
 import InstructorDashboardStatus from '@/components/dashboard/InstructorDashboardStatus.vue';
 import InstructorUserCourses from '@/components/dashboard/InstructorUserCourses.vue';
 import InstructorStatsCards from '@/components/dashboard/InstructorStatsCards.vue';
@@ -59,7 +59,6 @@ const error = ref<string | null>(null);
 const userRole = computed(() => authStore.user?.role || 'TRAINEE');
 
 // Состояния загрузки
-const isLoading = computed(() => coursesStore.isLoading || localLoading.value);
 
 const loadData = async () => {
   localLoading.value = true;
@@ -88,7 +87,6 @@ const loadData = async () => {
 onMounted(() => {
   loadData();
 });
-
 </script>
 
 <style scoped>

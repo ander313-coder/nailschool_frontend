@@ -144,11 +144,66 @@ export interface HomeworkFile {
 
 export interface Homework {
   id: number
-  lesson: number
+  user: {
+    id: number
+    username: string
+    email: string
+  }
+  lesson: {
+    id: number
+    title: string
+    course: {
+      id: number
+      title: string
+    }
+  }
   comment: string
+  instructor_comment: string
   status: HomeworkStatus
   files: HomeworkFile[]
   created_at: string
+  updated_at: string
+}
+
+export type HomeworkReviewStatus = 'APPROVED' | 'REJECTED'
+
+export interface HomeworkReviewData {
+  status: HomeworkReviewStatus
+  instructor_comment: string
+}
+
+export interface TextAnswer {
+  id: number
+  user: {
+    id: number
+    username: string
+    email: string
+  }
+  question: {
+    id: number
+    text: string
+    type: string
+    points: number
+  }
+  test: {
+    id: number
+    title: string
+    lesson_title: string
+  }
+  answer_text: string
+  created_at: string
+  requires_review: boolean
+}
+
+export interface TextAnswerReviewData {
+  is_approved: boolean
+  score: number
+  feedback: string
+}
+
+export interface HomeworkFilters {
+  status?: string
+  course_id?: number
 }
 
 export interface HomeworkSubmission {
