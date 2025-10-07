@@ -1,90 +1,60 @@
 <template>
   <div class="homework-review">
-    <!-- Хедер страницы -->
+    <!-- Минималистичный хедер -->
     <div class="page-header">
-      <div class="header-content">
-        <button @click="$router.back()" class="back-button">← Назад к списку</button>
-        <h1>Проверка домашнего задания</h1>
-      </div>
+      <button @click="$router.back()" class="back-button">← Назад</button>
+      <h1>Проверка ДЗ</h1>
     </div>
 
-    <!-- Отладочная информация -->
-    <div v-if="homeworkId" class="debug-info" style="background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 20px;">
-      <strong>DEBUG:</strong> Загружаем ДЗ ID: {{ homeworkId }} | Route: {{ $route.path }}
+    <!-- Состояния -->
+    <div v-if="isLoading" class="state-message">
+      <div class="spinner"></div>
+      <p>Загрузка...</p>
     </div>
 
-    <!-- Состояние загрузки -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>Загрузка домашнего задания...</p>
+    <div v-else-if="error" class="state-message error">
+      <p>{{ error }}</p>
+      <button @click="loadHomework" class="text-button">Повторить</button>
     </div>
 
-    <!-- Состояние ошибки -->
-    <div v-else-if="error" class="error-state">
-      <p>Ошибка: {{ error }}</p>
-      <button @click="loadHomework" class="retry-button">Попробовать снова</button>
-    </div>
-
-    <!-- ДЗ не найдено -->
-    <div v-else-if="!homework" class="not-found-state">
-      <h2>Домашнее задание не найдено</h2>
-      <p>ID: {{ homeworkId }} не существует в списке ДЗ</p>
-      <button @click="$router.back()" class="back-button">Вернуться назад</button>
+    <div v-else-if="!homework" class="state-message">
+      <p>ДЗ не найдено</p>
+      <button @click="$router.back()" class="text-button">Назад</button>
     </div>
 
     <!-- Основной контент -->
     <div v-else class="review-content">
-      <!-- Информация о ДЗ -->
-      <div class="homework-info-card">
-        <div class="info-section">
-          <h2>{{ getLessonTitle(homework) }}</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <strong>Студент:</strong>
-              <span>{{ getUserName(homework) }}</span>
-            </div>
-            <div class="info-item">
-              <strong>Курс:</strong>
-              <span>{{ getCourseTitle(homework) }}</span>
-            </div>
-            <div class="info-item">
-              <strong>Отправлено:</strong>
-              <span>{{ formatDate(homework.created_at) }}</span>
-            </div>
-            <div class="info-item">
-              <strong>Статус:</strong>
-              <span class="status-badge" :class="homework.status.toLowerCase()">
-                {{ getStatusDisplay(homework.status) }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Комментарий студента -->
-        <div class="student-comment" v-if="homework.comment">
-          <h3>Комментарий студента:</h3>
-          <div class="comment-text">{{ homework.comment }}</div>
+      <!-- Краткая информация -->
+      <div class="homework-meta">
+        <h2>{{ getLessonTitle(homework) }}</h2>
+        <div class="meta-grid">
+          <span class="meta-item">👤 {{ getUserName(homework) }}</span>
+          <span class="meta-item">📚 {{ getCourseTitle(homework) }}</span>
+          <span class="meta-item">📅 {{ formatDate(homework.created_at) }}</span>
+          <span class="meta-item status" :class="homework.status.toLowerCase()">
+            {{ getStatusDisplay(homework.status) }}
+          </span>
         </div>
       </div>
 
-      <!-- Файлы ДЗ -->
-      <div class="files-section" v-if="homework.files && homework.files.length > 0">
-        <h3>Прикрепленные файлы ({{ homework.files.length }})</h3>
-        <div class="files-grid">
+      <!-- Комментарий студента -->
+      <div v-if="homework.comment" class="comment-block">
+        <h3>Комментарий студента</h3>
+        <p>{{ homework.comment }}</p>
+      </div>
+
+      <!-- Файлы -->
+      <div v-if="homework.files?.length" class="files-block">
+        <h3>Файлы ({{ homework.files.length }})</h3>
+        <div class="files-list">
           <div 
             v-for="file in homework.files" 
             :key="file.id"
-            class="file-card"
+            class="file-item"
             @click="openFile(file.file)"
           >
-            <div class="file-icon">📎</div>
-            <div class="file-info">
-              <div class="file-name">{{ getFileName(file.file) }}</div>
-              <div class="file-date">{{ formatDate(file.uploaded_at) }}</div>
-            </div>
-            <button class="download-btn" @click.stop="downloadFile(file.file)">
-              📥
-            </button>
+            <span class="file-name">{{ getFileName(file.file) }}</span>
+            <button @click.stop="downloadFile(file.file)" class="icon-button">📥</button>
           </div>
         </div>
       </div>
@@ -93,52 +63,38 @@
       <div class="review-form">
         <h3>Результат проверки</h3>
         
-        <div class="form-group">
-          <label>Статус проверки:</label>
-          <div class="status-options">
-            <label class="radio-option">
-              <input 
-                type="radio" 
-                v-model="reviewData.status" 
-                value="APPROVED"
-              >
-              <span class="radio-label approved">✅ Принять работу</span>
-            </label>
-            <label class="radio-option">
-              <input 
-                type="radio" 
-                v-model="reviewData.status" 
-                value="REJECTED"
-              >
-              <span class="radio-label rejected">❌ Отправить на доработку</span>
-            </label>
-          </div>
+        <div class="status-options">
+          <button
+            @click="reviewData.status = 'APPROVED'"
+            :class="['status-btn', { active: reviewData.status === 'APPROVED' }]"
+          >
+            ✅ Принять
+          </button>
+          <button
+            @click="reviewData.status = 'REJECTED'"
+            :class="['status-btn', { active: reviewData.status === 'REJECTED' }]"
+          >
+            ❌ На доработку
+          </button>
         </div>
 
-        <div class="form-group">
-          <label for="instructor_comment">Комментарий преподавателя:</label>
+        <div class="comment-field">
           <textarea 
-            id="instructor_comment"
             v-model="reviewData.instructor_comment"
-            placeholder="Напишите комментарий к работе... Укажите что понравилось, что можно улучшить, какие ошибки были допущены."
-            rows="6"
+            placeholder="Комментарий для студента..."
+            rows="4"
           ></textarea>
         </div>
 
-        <div class="form-actions">
+        <div class="actions">
           <button 
             @click="submitReview" 
-            :disabled="isSubmitting"
-            class="submit-button"
+            :disabled="isSubmitting || !reviewData.instructor_comment.trim()"
+            class="primary-btn"
           >
-            {{ isSubmitting ? 'Сохранение...' : 'Сохранить результат' }}
+            {{ isSubmitting ? 'Сохранение...' : 'Сохранить' }}
           </button>
-          <button 
-            @click="$router.back()" 
-            class="cancel-button"
-          >
-            Отмена
-          </button>
+          <button @click="$router.back()" class="secondary-btn">Отмена</button>
         </div>
       </div>
     </div>
@@ -155,141 +111,82 @@ const route = useRoute()
 const router = useRouter()
 const instructorStore = useInstructorStore()
 
+// Состояния
 const isLoading = ref(true)
 const isSubmitting = ref(false)
 const error = ref<string | null>(null)
 const homework = ref<Homework | null>(null)
 
+// Данные формы
 const reviewData = ref<HomeworkReviewData>({
   status: 'APPROVED',
   instructor_comment: ''
 })
 
-// Получаем ID домашнего задания из URL
+// Получаем ID ДЗ
 const homeworkId = computed(() => {
   const id = route.params.id
-  console.log('📋 Route params:', route.params)
-  
-  if (typeof id === 'string') {
-    return parseInt(id)
-  } else if (Array.isArray(id)) {
-    return parseInt(id[0])
-  } else {
-    return id
-  }
+  return typeof id === 'string' ? parseInt(id) : Array.isArray(id) ? parseInt(id[0]) : id
 })
 
-// Вспомогательные функции для безопасного доступа к данным
+// Вспомогательные функции
 const getUserName = (hw: Homework): string => {
-  if (hw.user && typeof hw.user === 'object') {
-    return hw.user.username || 'Неизвестный студент'
-  }
-  return 'Неизвестный студент'
+  return hw.user && typeof hw.user === 'object' ? hw.user.username : 'Неизвестный студент'
 }
 
 const getLessonTitle = (hw: Homework): string => {
-  if (hw.lesson && typeof hw.lesson === 'object') {
-    return hw.lesson.title || 'Без названия'
-  }
-  return 'Урок #' + (typeof hw.lesson === 'number' ? hw.lesson : '?')
+  return hw.lesson && typeof hw.lesson === 'object' ? hw.lesson.title : `Урок #${hw.lesson}`
 }
 
 const getCourseTitle = (hw: Homework): string => {
-  if (hw.lesson && 
-      typeof hw.lesson === 'object' && 
-      hw.lesson.course) {
-    return hw.lesson.course.title || 'Без курса'
-  }
-  return 'Без курса'
+  return hw.lesson && typeof hw.lesson === 'object' && hw.lesson.course 
+    ? hw.lesson.course.title 
+    : 'Без курса'
 }
 
-// Загружаем данные ДЗ
+// Загрузка данных
 const loadHomework = async () => {
   try {
     isLoading.value = true
     error.value = null
     
-    console.log('🔄 Загрузка ДЗ с ID:', homeworkId.value)
-    
-    // Загружаем все ДЗ и находим нужное
     await instructorStore.loadAllHomeworks()
     const foundHomework = instructorStore.allHomeworks.find(hw => hw.id === homeworkId.value)
     
     if (foundHomework) {
       homework.value = foundHomework
-      // Заполняем форму текущими данными
       reviewData.value.instructor_comment = foundHomework.instructor_comment || ''
       if (foundHomework.status !== 'PENDING') {
         reviewData.value.status = foundHomework.status as 'APPROVED' | 'REJECTED'
       }
-      
-      console.log('✅ ДЗ загружено:', foundHomework)
-      console.log('📊 Структура данных:', {
-        id: foundHomework.id,
-        user: foundHomework.user,
-        lesson: foundHomework.lesson,
-        status: foundHomework.status
-      })
     } else {
-      error.value = `Домашнее задание с ID ${homeworkId.value} не найдено`
-      console.warn('❌ ДЗ не найдено, ID:', homeworkId.value)
-      console.log('📋 Все доступные ДЗ:', instructorStore.allHomeworks.map(h => ({ id: h.id, status: h.status })))
+      error.value = `ДЗ с ID ${homeworkId.value} не найдено`
     }
   } catch (err: any) {
-    error.value = err.message || 'Не удалось загрузить домашнее задание'
-    console.error('❌ Ошибка загрузки ДЗ:', err)
+    error.value = err.message || 'Ошибка загрузки'
   } finally {
     isLoading.value = false
   }
 }
 
-// Отправляем результат проверки
+// Отправка проверки
 const submitReview = async () => {
+  if (!homework.value || !reviewData.value.instructor_comment.trim()) return
+  
   try {
     isSubmitting.value = true
-    error.value = null
-    
-    if (!reviewData.value.instructor_comment.trim()) {
-      error.value = 'Пожалуйста, напишите комментарий к работе'
-      return
-    }
-    
-    if (!homework.value) {
-      error.value = 'Домашнее задание не найдено'
-      return
-    }
-    
-    console.log('📝 Отправка проверки:', reviewData.value)
-    
     await instructorStore.reviewHomework(homework.value.id, reviewData.value)
-    
-    // Показываем уведомление об успехе
-    alert('Результат проверки сохранен!')
-    
-    // Возвращаемся к списку ДЗ
     router.push('/instructor/homeworks')
-    
   } catch (err: any) {
-    error.value = err.message || 'Не удалось сохранить результат проверки'
-    console.error('❌ Ошибка сохранения проверки:', err)
+    error.value = err.message || 'Ошибка сохранения'
   } finally {
     isSubmitting.value = false
   }
 }
 
-// Вспомогательные функции
+// Утилиты
 const formatDate = (dateString: string) => {
-  try {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  } catch {
-    return 'Неизвестная дата'
-  }
+  return new Date(dateString).toLocaleDateString('ru-RU')
 }
 
 const getStatusDisplay = (status: string) => {
@@ -316,338 +213,56 @@ const downloadFile = (filePath: string) => {
   link.click()
 }
 
-// Загружаем данные при монтировании
+// Инициализация
 onMounted(() => {
-  console.log('🚀 HomeworkReviewView mounted!')
   loadHomework()
 })
 </script>
 
 <style scoped>
-/* Стили остаются такими же как в предыдущей версии */
 .homework-review {
-  max-width: 1000px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 20px;
 }
 
+/* Хедер */
 .page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   margin-bottom: 32px;
 }
 
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
 .back-button {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 10px 16px;
+  background: none;
+  border: 1px solid #ddd;
+  padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
-}
-
-.back-button:hover {
-  background: #5a6268;
 }
 
 .page-header h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-}
-
-.review-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.homework-info-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-}
-
-.info-section h2 {
   font-size: 24px;
   font-weight: 600;
-  margin-bottom: 16px;
-  color: #333;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.info-item strong {
-  font-size: 14px;
-  color: #666;
-}
-
-.info-item span {
-  font-size: 16px;
-  color: #333;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-badge.pending {
-  background: #FFF3CD;
-  color: #856404;
-}
-
-.status-badge.approved {
-  background: #D4EDDA;
-  color: #155724;
-}
-
-.status-badge.rejected {
-  background: #F8D7DA;
-  color: #721C24;
-}
-
-.student-comment {
-  border-top: 1px solid #f0f0f0;
-  padding-top: 20px;
-}
-
-.student-comment h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: #333;
-}
-
-.comment-text {
-  background: #f8f9fa;
-  padding: 16px;
-  border-radius: 8px;
-  border-left: 4px solid #8C4CC3;
-  line-height: 1.5;
-  color: #333;
-}
-
-.files-section {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-}
-
-.files-section h3 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: #333;
-}
-
-.files-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.file-card {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-  gap: 12px;
-}
-
-.file-card:hover {
-  background: #e9ecef;
-}
-
-.file-icon {
-  font-size: 20px;
-}
-
-.file-info {
-  flex: 1;
-}
-
-.file-name {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
-}
-
-.file-date {
-  font-size: 12px;
-  color: #666;
-}
-
-.download-btn {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.download-btn:hover {
-  background: #dee2e6;
-}
-
-.review-form {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-}
-
-.review-form h3 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.form-group {
-  margin-bottom: 24px;
-}
-
-.form-group label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #333;
-}
-
-.status-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.radio-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 12px;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.radio-option:hover {
-  border-color: #8C4CC3;
-}
-
-.radio-option input[type="radio"] {
   margin: 0;
 }
 
-.radio-label {
-  font-weight: 600;
-}
-
-.radio-label.approved {
-  color: #155724;
-}
-
-.radio-label.rejected {
-  color: #721C24;
-}
-
-.form-group textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  resize: vertical;
-  transition: border-color 0.2s;
-}
-
-.form-group textarea:focus {
-  outline: none;
-  border-color: #8C4CC3;
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.submit-button {
-  background: #8C4CC3;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.submit-button:hover:not(:disabled) {
-  background: #7b3fb3;
-}
-
-.submit-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.cancel-button {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.cancel-button:hover {
-  background: #5a6268;
-}
-
-.loading-state, .error-state, .not-found-state {
+/* Состояния */
+.state-message {
   text-align: center;
-  padding: 60px;
-  color: #666;
+  padding: 60px 20px;
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #8C4CC3;
+.state-message.error {
+  color: #e74c3c;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #8C4CC3;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -658,37 +273,188 @@ onMounted(() => {
   100% { transform: rotate(360deg); }
 }
 
-.retry-button {
+.text-button {
+  background: none;
+  border: none;
+  color: #8C4CC3;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* Основной контент */
+.review-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Мета-информация */
+.homework-meta h2 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.meta-item {
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.meta-item.status {
+  font-weight: 600;
+}
+
+.status.pending { color: #f39c12; background: #fef5e6; }
+.status.approved { color: #27ae60; background: #e8f6f3; }
+.status.rejected { color: #e74c3c; background: #fdedec; }
+
+/* Блоки контента */
+.comment-block,
+.files-block,
+.review-form,
+.homework-meta {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.comment-block h3,
+.files-block h3,
+.review-form h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Файлы */
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.file-item:hover {
+  background: #e9ecef;
+}
+
+.file-name {
+  flex: 1;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.icon-button:hover {
+  background: #dee2e6;
+}
+
+/* Форма проверки */
+.status-options {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.status-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.status-btn.active {
+  border-color: #8C4CC3;
+  background: #f3f0ff;
+}
+
+.comment-field textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 20px;
+}
+
+.comment-field textarea:focus {
+  outline: none;
+  border-color: #8C4CC3;
+}
+
+/* Кнопки действий */
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.primary-btn {
+  flex: 1;
+  padding: 12px 24px;
   background: #8C4CC3;
   color: white;
   border: none;
-  padding: 10px 20px;
   border-radius: 6px;
-  margin-top: 16px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.primary-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  padding: 12px 24px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
   cursor: pointer;
 }
 
-.retry-button:hover {
-  background: #7b3fb3;
-}
-
+/* Адаптивность */
 @media (max-width: 768px) {
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  .homework-review {
+    padding: 16px;
   }
   
-  .info-grid {
+  .meta-grid {
     grid-template-columns: 1fr;
   }
   
-  .form-actions {
+  .status-options {
     flex-direction: column;
   }
   
-  .status-options {
-    gap: 8px;
+  .actions {
+    flex-direction: column;
   }
 }
 </style>
