@@ -3,13 +3,19 @@
     <!-- Хедер страницы -->
     <div class="page-header">
       <div class="header-content">
-        <button @click="$router.back()" class="back-button">← Назад</button>
+        <button @click="$router.back()" class="back-button">← Назад к списку</button>
         <h1>Проверка домашнего задания</h1>
       </div>
     </div>
 
+    <!-- Отладочная информация -->
+    <div v-if="homeworkId" class="debug-info" style="background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 20px;">
+      <strong>DEBUG:</strong> Загружаем ДЗ ID: {{ homeworkId }} | Route: {{ $route.path }}
+    </div>
+
     <!-- Состояние загрузки -->
     <div v-if="isLoading" class="loading-state">
+      <div class="loading-spinner"></div>
       <p>Загрузка домашнего задания...</p>
     </div>
 
@@ -19,20 +25,27 @@
       <button @click="loadHomework" class="retry-button">Попробовать снова</button>
     </div>
 
+    <!-- ДЗ не найдено -->
+    <div v-else-if="!homework" class="not-found-state">
+      <h2>Домашнее задание не найдено</h2>
+      <p>ID: {{ homeworkId }} не существует в списке ДЗ</p>
+      <button @click="$router.back()" class="back-button">Вернуться назад</button>
+    </div>
+
     <!-- Основной контент -->
-    <div v-else-if="homework" class="review-content">
+    <div v-else class="review-content">
       <!-- Информация о ДЗ -->
       <div class="homework-info-card">
         <div class="info-section">
-          <h2>{{ homework.lesson.title }}</h2>
+          <h2>{{ getLessonTitle(homework) }}</h2>
           <div class="info-grid">
             <div class="info-item">
               <strong>Студент:</strong>
-              <span>{{ homework.user.username }}</span>
+              <span>{{ getUserName(homework) }}</span>
             </div>
             <div class="info-item">
               <strong>Курс:</strong>
-              <span>{{ homework.lesson.course.title }}</span>
+              <span>{{ getCourseTitle(homework) }}</span>
             </div>
             <div class="info-item">
               <strong>Отправлено:</strong>
@@ -55,7 +68,7 @@
       </div>
 
       <!-- Файлы ДЗ -->
-      <div class="files-section" v-if="homework.files.length > 0">
+      <div class="files-section" v-if="homework.files && homework.files.length > 0">
         <h3>Прикрепленные файлы ({{ homework.files.length }})</h3>
         <div class="files-grid">
           <div 
@@ -153,13 +166,50 @@ const reviewData = ref<HomeworkReviewData>({
 })
 
 // Получаем ID домашнего задания из URL
-const homeworkId = computed(() => parseInt(route.params.id as string))
+const homeworkId = computed(() => {
+  const id = route.params.id
+  console.log('📋 Route params:', route.params)
+  
+  if (typeof id === 'string') {
+    return parseInt(id)
+  } else if (Array.isArray(id)) {
+    return parseInt(id[0])
+  } else {
+    return id
+  }
+})
+
+// Вспомогательные функции для безопасного доступа к данным
+const getUserName = (hw: Homework): string => {
+  if (hw.user && typeof hw.user === 'object') {
+    return hw.user.username || 'Неизвестный студент'
+  }
+  return 'Неизвестный студент'
+}
+
+const getLessonTitle = (hw: Homework): string => {
+  if (hw.lesson && typeof hw.lesson === 'object') {
+    return hw.lesson.title || 'Без названия'
+  }
+  return 'Урок #' + (typeof hw.lesson === 'number' ? hw.lesson : '?')
+}
+
+const getCourseTitle = (hw: Homework): string => {
+  if (hw.lesson && 
+      typeof hw.lesson === 'object' && 
+      hw.lesson.course) {
+    return hw.lesson.course.title || 'Без курса'
+  }
+  return 'Без курса'
+}
 
 // Загружаем данные ДЗ
 const loadHomework = async () => {
   try {
     isLoading.value = true
     error.value = null
+    
+    console.log('🔄 Загрузка ДЗ с ID:', homeworkId.value)
     
     // Загружаем все ДЗ и находим нужное
     await instructorStore.loadAllHomeworks()
@@ -172,8 +222,18 @@ const loadHomework = async () => {
       if (foundHomework.status !== 'PENDING') {
         reviewData.value.status = foundHomework.status as 'APPROVED' | 'REJECTED'
       }
+      
+      console.log('✅ ДЗ загружено:', foundHomework)
+      console.log('📊 Структура данных:', {
+        id: foundHomework.id,
+        user: foundHomework.user,
+        lesson: foundHomework.lesson,
+        status: foundHomework.status
+      })
     } else {
-      error.value = 'Домашнее задание не найдено'
+      error.value = `Домашнее задание с ID ${homeworkId.value} не найдено`
+      console.warn('❌ ДЗ не найдено, ID:', homeworkId.value)
+      console.log('📋 Все доступные ДЗ:', instructorStore.allHomeworks.map(h => ({ id: h.id, status: h.status })))
     }
   } catch (err: any) {
     error.value = err.message || 'Не удалось загрузить домашнее задание'
@@ -194,7 +254,14 @@ const submitReview = async () => {
       return
     }
     
-    await instructorStore.reviewHomework(homeworkId.value, reviewData.value)
+    if (!homework.value) {
+      error.value = 'Домашнее задание не найдено'
+      return
+    }
+    
+    console.log('📝 Отправка проверки:', reviewData.value)
+    
+    await instructorStore.reviewHomework(homework.value.id, reviewData.value)
     
     // Показываем уведомление об успехе
     alert('Результат проверки сохранен!')
@@ -212,13 +279,17 @@ const submitReview = async () => {
 
 // Вспомогательные функции
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  try {
+    return new Date(dateString).toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return 'Неизвестная дата'
+  }
 }
 
 const getStatusDisplay = (status: string) => {
@@ -247,11 +318,13 @@ const downloadFile = (filePath: string) => {
 
 // Загружаем данные при монтировании
 onMounted(() => {
+  console.log('🚀 HomeworkReviewView mounted!')
   loadHomework()
 })
 </script>
 
 <style scoped>
+/* Стили остаются такими же как в предыдущей версии */
 .homework-review {
   max-width: 1000px;
   margin: 0 auto;
@@ -564,10 +637,25 @@ onMounted(() => {
   background: #5a6268;
 }
 
-.loading-state, .error-state {
+.loading-state, .error-state, .not-found-state {
   text-align: center;
   padding: 60px;
   color: #666;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #8C4CC3;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .retry-button {
@@ -584,7 +672,6 @@ onMounted(() => {
   background: #7b3fb3;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;

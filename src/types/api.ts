@@ -144,25 +144,58 @@ export interface HomeworkFile {
 
 export interface Homework {
   id: number
-  user: {
+  user?: {
+    // Делаем опциональным, так как может быть undefined
     id: number
     username: string
     email: string
   }
-  lesson: {
-    id: number
-    title: string
-    course: {
-      id: number
-      title: string
-    }
-  }
+  lesson:
+    | number
+    | {
+        // Может быть ID или объектом
+        id: number
+        title: string
+        course?: {
+          id: number
+          title: string
+        }
+      }
   comment: string
   instructor_comment: string
   status: HomeworkStatus
   files: HomeworkFile[]
   created_at: string
   updated_at: string
+}
+
+// Добавляем хелперы для работы с данными
+export const getHomeworkUserName = (homework: Homework): string => {
+  if (typeof homework.user === 'object' && homework.user !== null) {
+    return homework.user.username || 'Неизвестно'
+  }
+  return 'Неизвестно'
+}
+
+export const getHomeworkLessonTitle = (homework: Homework): string => {
+  if (typeof homework.lesson === 'object' && homework.lesson !== null) {
+    return homework.lesson.title || 'Без названия'
+  }
+  return 'Без названия'
+}
+
+export const getHomeworkCourseTitle = (homework: Homework): string => {
+  if (typeof homework.lesson === 'object' && homework.lesson !== null && homework.lesson.course) {
+    return homework.lesson.course.title || 'Без курса'
+  }
+  return 'Без курса'
+}
+
+export const getHomeworkCourseId = (homework: Homework): number | null => {
+  if (typeof homework.lesson === 'object' && homework.lesson !== null && homework.lesson.course) {
+    return homework.lesson.course.id
+  }
+  return null
 }
 
 export type HomeworkReviewStatus = 'APPROVED' | 'REJECTED'
