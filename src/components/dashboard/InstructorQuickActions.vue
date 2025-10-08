@@ -1,61 +1,37 @@
 <template>
-  <div class="instructor-dashboard">
-    <div class="dashboard-header">
-      <h1>Панель преподавателя</h1>
-      <p>Управление курсами и проверка работ</p>
-    </div>
-
-    <!-- Быстрые действия -->
-    <div class="quick-actions">
-      <h2>Быстрые действия</h2>
-      <div class="actions-grid">
-        <div class="action-card" @click="goToPendingHomeworks">
-          <div class="action-icon">📋</div>
-          <div class="action-text">Проверить ДЗ</div>
-          <div class="action-badge" v-if="instructorStore.pendingHomeworksCount > 0">
-            {{ instructorStore.pendingHomeworksCount }}
-          </div>
+  <!-- Быстрые действия -->
+  <div class="quick-actions">
+    <h2>Быстрые действия</h2>
+    <div class="actions-grid">
+      <div class="action-card" @click="$router.push('/instructor/homeworks')">
+        <div class="action-icon">📋</div>
+        <div class="action-text">Проверить ДЗ</div>
+        <div class="action-badge" v-if="instructorStore.pendingHomeworksCount > 0">
+          {{ instructorStore.pendingHomeworksCount }}
         </div>
-
-        <div class="action-card" @click="goToTextAnswers">
-          <div class="action-icon">📝</div>
-          <div class="action-text">Текстовые ответы</div>
-          <div class="action-badge" v-if="instructorStore.pendingTextAnswersCount > 0">
-            {{ instructorStore.pendingTextAnswersCount }}
-          </div>
-        </div>
-
-        <router-link to="/courses" class="action-card">
-          <div class="action-icon">🎓</div>
-          <div class="action-text">Мои курсы</div>
-        </router-link>
       </div>
-    </div>
 
-    <!-- Статистика -->
-    <div class="stats-section">
-      <InstructorStatsCards />
+      <div class="action-card" @click="$router.push('/instructor/text-answers')">
+        <div class="action-icon">📝</div>
+        <div class="action-text">Текстовые ответы</div>
+        <div class="action-badge" v-if="instructorStore.pendingTextAnswersCount > 0">
+            {{ instructorStore.pendingTextAnswersCount }}
+        </div>
+      </div>
+
+      <router-link to="/courses" class="action-card">
+        <div class="action-icon">🎓</div>
+        <div class="action-text">Мои курсы</div>
+      </router-link>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import { useInstructorStore } from '../../stores/instructorStore'
-import InstructorStatsCards from './InstructorStatsCards.vue'
 
-const router = useRouter()
 const instructorStore = useInstructorStore()
 
-const goToPendingHomeworks = () => {
-  // Временная заглушка - позже создадим страницу
-  alert('Страница проверки ДЗ будет создана позже')
-}
-
-const goToTextAnswers = () => {
-  // Временная заглушка - позже создадим страницу
-  alert('Страница текстовых ответов будет создана позже')
-}
 </script>
 
 <style scoped>

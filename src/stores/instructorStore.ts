@@ -103,6 +103,52 @@ export const useInstructorStore = defineStore('instructor', () => {
   }
 
   /**
+   * Загрузить текстовые ответы по конкретному студенту
+   */
+  const loadStudentTextAnswers = async (userId: number): Promise<void> => {
+    try {
+      isLoading.value = true
+      error.value = null
+      console.log(`🔄 Загружаем текстовые ответы студента ${userId}...`)
+
+      // Этот метод нужно добавить в instructorService
+      const studentAnswers = await instructorService.getStudentTextAnswers(userId)
+
+      // Сохраняем в отдельное свойство или используем allTextAnswers
+      // Добавим новое свойство:
+      studentTextAnswers.value = studentAnswers
+
+      console.log(`✅ Загружено ${studentAnswers.length} ответов студента`)
+    } catch (err: any) {
+      error.value = err.message || 'Ошибка при загрузке ответов студента'
+      console.error('❌ Ошибка загрузки ответов студента:', err)
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * Загрузить все текстовые ответы (для фильтрации)
+   */
+  const loadAllTextAnswers = async (filters?: { user_id?: number }): Promise<void> => {
+    try {
+      isLoading.value = true
+      error.value = null
+      console.log('🔄 Загружаем все текстовые ответы...')
+
+      allTextAnswers.value = await instructorService.getAllTextAnswers(filters)
+      console.log(`✅ Загружено ${allTextAnswers.value.length} текстовых ответов`)
+    } catch (err: any) {
+      error.value = err.message || 'Ошибка при загрузке текстовых ответов'
+      console.error('❌ Ошибка загрузки текстовых ответов:', err)
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
    * Проверить домашнее задание
    */
   const reviewHomework = async (
@@ -156,13 +202,10 @@ export const useInstructorStore = defineStore('instructor', () => {
       error.value = null
       console.log(`🔄 Проверяем текстовый ответ ${answerId}...`)
 
-      await instructorService.reviewTextAnswer(answerId, reviewData)
+      const updatedAnswer = await instructorService.reviewTextAnswer(answerId, reviewData)
 
-      // Убираем из списка на проверку
-      const answerIndex = pendingTextAnswers.value.findIndex((answer) => answer.id === answerId)
-      if (answerIndex !== -1) {
-        pendingTextAnswers.value.splice(answerIndex, 1)
-      }
+      // Обновляем ответ во всех списках
+      updateAnswerInLists(answerId, updatedAnswer)
 
       console.log(`✅ Текстовый ответ ${answerId} проверен`)
     } catch (err: any) {
@@ -171,6 +214,32 @@ export const useInstructorStore = defineStore('instructor', () => {
       throw err
     } finally {
       isLoading.value = false
+    }
+  }
+
+  /**
+   * Вспомогательная функция для обновления ответа во всех списках
+   */
+  const updateAnswerInLists = (answerId: number, updatedAnswer: any): void => {
+    // Обновляем в pendingTextAnswers
+    const pendingIndex = pendingTextAnswers.value.findIndex((answer) => answer.id === answerId)
+    if (pendingIndex !== -1) {
+      pendingTextAnswers.value.splice(pendingIndex, 1)
+    }
+
+    // Обновляем в allTextAnswers
+    const allIndex = allTextAnswers.value.findIndex((answer) => answer.id === answerId)
+    if (allIndex !== -1) {
+      allTextAnswers.value[allIndex] = { ...allTextAnswers.value[allIndex], ...updatedAnswer }
+    }
+
+    // Обновляем в studentTextAnswers
+    const studentIndex = studentTextAnswers.value.findIndex((answer) => answer.id === answerId)
+    if (studentIndex !== -1) {
+      studentTextAnswers.value[studentIndex] = {
+        ...studentTextAnswers.value[studentIndex],
+        ...updatedAnswer,
+      }
     }
   }
 
@@ -188,6 +257,8 @@ export const useInstructorStore = defineStore('instructor', () => {
     pendingTextAnswers,
     isLoading,
     error,
+    allTextAnswers,
+    studentTextAnswers,
 
     // Getters
     pendingHomeworksCount,
@@ -201,5 +272,7 @@ export const useInstructorStore = defineStore('instructor', () => {
     reviewHomework,
     reviewTextAnswer,
     clearError,
+    loadStudentTextAnswers,
+    loadAllTextAnswers,
   }
 })

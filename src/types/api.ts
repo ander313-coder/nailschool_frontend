@@ -226,6 +226,10 @@ export interface TextAnswer {
   answer_text: string
   created_at: string
   requires_review: boolean
+  is_approved?: boolean
+  score?: number
+  feedback?: string
+  reviewed_at?: string
 }
 
 export interface TextAnswerReviewData {

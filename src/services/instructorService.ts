@@ -62,6 +62,23 @@ export const instructorService = {
     console.log('✅ Получены текстовые ответы:', response.data.results)
     return response.data.results
   },
+  /**
+   * Получить все текстовые ответы (с фильтрами)
+   */
+  async getAllTextAnswers(filters?: { user_id?: number }): Promise<TextAnswer[]> {
+    const response = await apiClient.get('/api/instructor/text-answers/', {
+      params: filters,
+    })
+    return response.data
+  },
+
+  /**
+   * Получить текстовые ответы конкретного студента
+   */
+  async getStudentTextAnswers(userId: number): Promise<TextAnswer[]> {
+    const response = await apiClient.get(`/api/instructor/text-answers/student/${userId}/`)
+    return response.data
+  },
 
   /**
    * Проверить домашнее задание
@@ -78,10 +95,12 @@ export const instructorService = {
    * Проверить текстовый ответ
    */
   async reviewTextAnswer(answerId: number, reviewData: TextAnswerReviewData): Promise<void> {
-    console.log(`📝 Проверяем текстовый ответ ${answerId}:`, reviewData)
-
-    await apiClient.patch(`/instructor/text-answers/${answerId}/review/`, reviewData)
-    console.log('✅ Текстовый ответ проверен')
+    const response = await apiClient.patch(
+      `/api/instructor/text-answers/${answerId}/review/`,
+      reviewData,
+    )
+    console.log('✅ Текстовый ответ проверен:', response.data)
+    return response.data
   },
 }
 
