@@ -16,6 +16,8 @@ export const useInstructorStore = defineStore('instructor', () => {
   const pendingHomeworks = ref<Homework[]>([])
   const allHomeworks = ref<Homework[]>([])
   const pendingTextAnswers = ref<TextAnswer[]>([])
+  const allTextAnswers = ref<TextAnswer[]>([])
+  const studentTextAnswers = ref<TextAnswer[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
@@ -82,8 +84,7 @@ export const useInstructorStore = defineStore('instructor', () => {
     }
   }
 
-  /**
-   * Загрузить текстовые ответы на проверку
+  /** Загрузить текстовые ответы на проверку
    */
   const loadPendingTextAnswers = async (): Promise<void> => {
     try {
@@ -91,7 +92,10 @@ export const useInstructorStore = defineStore('instructor', () => {
       error.value = null
       console.log('🔄 Загружаем текстовые ответы на проверку...')
 
-      pendingTextAnswers.value = await instructorService.getPendingTextAnswers()
+      const answers = await instructorService.getPendingTextAnswers()
+      // Убедимся, что это массив
+      pendingTextAnswers.value = Array.isArray(answers) ? answers : []
+
       console.log(`✅ Загружено ${pendingTextAnswers.value.length} текстовых ответов`)
     } catch (err: any) {
       error.value = err.message || 'Ошибка при загрузке текстовых ответов'
@@ -102,46 +106,39 @@ export const useInstructorStore = defineStore('instructor', () => {
     }
   }
 
-  /**
-   * Загрузить текстовые ответы по конкретному студенту
-   */
-  const loadStudentTextAnswers = async (userId: number): Promise<void> => {
-    try {
-      isLoading.value = true
-      error.value = null
-      console.log(`🔄 Загружаем текстовые ответы студента ${userId}...`)
-
-      // Этот метод нужно добавить в instructorService
-      const studentAnswers = await instructorService.getStudentTextAnswers(userId)
-
-      // Сохраняем в отдельное свойство или используем allTextAnswers
-      // Добавим новое свойство:
-      studentTextAnswers.value = studentAnswers
-
-      console.log(`✅ Загружено ${studentAnswers.length} ответов студента`)
-    } catch (err: any) {
-      error.value = err.message || 'Ошибка при загрузке ответов студента'
-      console.error('❌ Ошибка загрузки ответов студента:', err)
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  /**
-   * Загрузить все текстовые ответы (для фильтрации)
-   */
+  // Загрузить все текстовые ответы (для преподавателя)
   const loadAllTextAnswers = async (filters?: { user_id?: number }): Promise<void> => {
     try {
       isLoading.value = true
       error.value = null
       console.log('🔄 Загружаем все текстовые ответы...')
 
-      allTextAnswers.value = await instructorService.getAllTextAnswers(filters)
+      const answers = await instructorService.getAllTextAnswers(filters)
+      allTextAnswers.value = Array.isArray(answers) ? answers : []
+
       console.log(`✅ Загружено ${allTextAnswers.value.length} текстовых ответов`)
     } catch (err: any) {
       error.value = err.message || 'Ошибка при загрузке текстовых ответов'
       console.error('❌ Ошибка загрузки текстовых ответов:', err)
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+  // Загрузить текстовые ответы конкретного студента
+  const loadStudentTextAnswers = async (userId: number): Promise<void> => {
+    try {
+      isLoading.value = true
+      error.value = null
+      console.log(`🔄 Загружаем текстовые ответы студента ${userId}...`)
+
+      const answers = await instructorService.getStudentTextAnswers(userId)
+      studentTextAnswers.value = Array.isArray(answers) ? answers : []
+
+      console.log(`✅ Загружено ${studentTextAnswers.value.length} ответов студента`)
+    } catch (err: any) {
+      error.value = err.message || 'Ошибка при загрузке ответов студента'
+      console.error('❌ Ошибка загрузки ответов студента:', err)
       throw err
     } finally {
       isLoading.value = false

@@ -8,7 +8,6 @@
         <p>Ответы студентов, требующие проверки</p>
       </div>
     </div>
-
     <!-- Панель фильтров -->
     <div class="filters-panel">
       <div class="filter-group">
@@ -26,7 +25,7 @@
         <select v-model="selectedStudentId" class="filter-select" @change="onStudentChange">
           <option value="">Все студенты</option>
           <option v-for="student in uniqueStudents" :key="student.id" :value="student.id">
-            {{ student.username }}
+            {{ student.username || 'Неизвестный студент' }}
           </option>
         </select>
       </div>
@@ -65,7 +64,7 @@
     </div>
 
     <!-- Статистика -->
-    <div v-if="!isLoading && filteredAnswers.length > 0" class="stats-bar">
+    <div v-else class="stats-bar">
       <div class="stats">
         <span class="stat total">Всего: {{ filteredAnswers.length }}</span>
         <span v-if="viewMode !== 'pending'" class="stat pending">
@@ -85,7 +84,7 @@
     </div>
 
     <!-- Список ответов -->
-    <div v-else-if="filteredAnswers.length > 0" class="answers-content">
+    <div v-if="!isLoading && !error && filteredAnswers.length > 0" class="answers-content">
       <div class="answers-list">
         <div
           v-for="answer in sortedAnswers"
@@ -99,32 +98,119 @@
           @click="openReview(answer)"
         >
           <div class="answer-header">
-            <h3>{{ answer.test.lesson_title }}</h3>
-            <span class="test-title">{{ answer.test.title }}</span>
+            <h3>{{ answer.test?.lesson_title || 'Без урока' }}</h3>
+            <span class="test-title">{{ answer.test?.title || 'Без теста' }}</span>
             <span class="status-badge" :class="getStatusClass(answer)">
               {{ getStatusText(answer) }}
             </span>
           </div>
 
           <div class="answer-preview">
-            <p class="question">{{ answer.question.text }}</p>
+            <p class="question">{{ answer.question?.text || 'Без вопроса' }}</p>
             <p class="answer-text">{{ truncateText(answer.answer_text, 120) }}</p>
           </div>
 
           <div class="answer-meta">
-            <span class="student">👤 {{ answer.user.username }}</span>
+            <span class="student">👤 {{ answer.user?.username || 'Неизвестный студент' }}</span>
             <span class="date">📅 {{ formatDate(answer.created_at) }}</span>
-            <span class="points">⭐ {{ answer.question.points }} баллов</span>
+            <span class="points">⭐ {{ answer.question?.points || 0 }} баллов</span>
             <span v-if="!answer.requires_review" class="score">
-              Оценка: {{ getAnswerScore(answer) }}/{{ answer.question.points }}
+              Оценка: {{ getAnswerScore(answer) }}/{{ answer.question?.points || 0 }}
             </span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Модальное окно проверки (остается без изменений) -->
-    <!-- ... -->
+    <!-- Модальное окно проверки -->
+    <div v-if="selectedAnswer" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h2>Проверка ответа</h2>
+          <button @click="closeModal" class="close-button">×</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Информация о вопросе -->
+          <div class="question-info">
+            <h3>Вопрос:</h3>
+            <p>{{ selectedAnswer.question?.text || 'Без вопроса' }}</p>
+            <div class="question-meta">
+              <span>Тест: {{ selectedAnswer.test?.title || 'Без теста' }}</span>
+              <span>Урок: {{ selectedAnswer.test?.lesson_title || 'Без урока' }}</span>
+              <span>Баллы: {{ selectedAnswer.question?.points || 0 }}</span>
+            </div>
+          </div>
+
+          <!-- Ответ студента -->
+          <div class="student-answer">
+            <h3>Ответ студента:</h3>
+            <div class="answer-content">
+              <p>{{ selectedAnswer.answer_text || 'Нет ответа' }}</p>
+            </div>
+            <div class="student-info">
+              <span>👤 {{ selectedAnswer.user?.username || 'Неизвестный студент' }}</span>
+              <span>📅 {{ formatDate(selectedAnswer.created_at) }}</span>
+            </div>
+          </div>
+
+          <!-- Форма проверки -->
+          <div class="review-form">
+            <h3>Оценка ответа</h3>
+            
+            <div class="score-section">
+              <label>Оценка:</label>
+              <div class="score-options">
+                <button
+                  @click="reviewData.is_approved = true"
+                  :class="['score-btn', { active: reviewData.is_approved }]"
+                >
+                  ✅ Принять
+                </button>
+                <button
+                  @click="reviewData.is_approved = false"
+                  :class="['score-btn', { active: !reviewData.is_approved }]"
+                >
+                  ❌ Отклонить
+                </button>
+              </div>
+            </div>
+
+            <div class="score-input">
+              <label>Баллы (0-{{ selectedAnswer.question?.points || 0 }}):</label>
+              <input
+                type="number"
+                v-model.number="reviewData.score"
+                :max="selectedAnswer.question?.points || 0"
+                min="0"
+                class="score-field"
+              >
+            </div>
+
+            <div class="feedback-section">
+              <label>Комментарий:</label>
+              <textarea
+                v-model="reviewData.feedback"
+                placeholder="Обратная связь для студента..."
+                rows="3"
+                class="feedback-field"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button 
+            @click="submitReview" 
+            :disabled="isSubmitting || reviewData.score < 0 || reviewData.score > (selectedAnswer.question?.points || 0)"
+            class="primary-btn"
+          >
+            {{ isSubmitting ? 'Сохранение...' : 'Сохранить оценку' }}
+          </button>
+          <button @click="closeModal" class="secondary-btn">Отмена</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -146,18 +232,18 @@ const selectedAnswer = ref<TextAnswer | null>(null)
 const viewMode = ref<'pending' | 'all' | 'student'>('pending')
 const selectedStudentId = ref<number | ''>('')
 
-// Данные формы (остается без изменений)
+// Данные формы
 const reviewData = ref<TextAnswerReviewData>({
   is_approved: true,
   score: 0,
   feedback: ''
 })
 
-// Computed свойства
+// Computed свойства с защитой от undefined
 const answers = computed(() => {
   switch (viewMode.value) {
     case 'pending':
-      return instructorStore.pendingTextAnswers
+      return instructorStore.pendingTextAnswers || []
     case 'all':
       return instructorStore.allTextAnswers || []
     case 'student':
@@ -187,21 +273,23 @@ const selectedStudent = computed(() => {
   return uniqueStudents.value.find(student => student.id === selectedStudentId.value)
 })
 
-// Фильтрованные ответы
+// Фильтрованные ответы с защитой
 const filteredAnswers = computed(() => {
-  let filtered = [...answers.value]
+  let filtered = [...(answers.value || [])]
   
   // Если выбран конкретный студент в режиме "all"
   if (viewMode.value === 'all' && selectedStudentId.value) {
-    filtered = filtered.filter(answer => answer.user.id === selectedStudentId.value)
+    filtered = filtered.filter(answer => 
+      answer.user && answer.user.id === selectedStudentId.value
+    )
   }
   
   return filtered
 })
 
-// Сортированные ответы
+// Сортированные ответы с защитой
 const sortedAnswers = computed(() => {
-  const sorted = [...filteredAnswers.value]
+  const sorted = [...(filteredAnswers.value || [])]
   return sorted.sort((a, b) => {
     const dateA = new Date(a.created_at).getTime()
     const dateB = new Date(b.created_at).getTime()
@@ -209,17 +297,17 @@ const sortedAnswers = computed(() => {
   })
 })
 
-// Статистика
+// Статистика с защитой
 const pendingCount = computed(() => 
-  filteredAnswers.value.filter(answer => answer.requires_review).length
+  (filteredAnswers.value || []).filter(answer => answer.requires_review).length
 )
 
 const approvedCount = computed(() => 
-  filteredAnswers.value.filter(answer => !answer.requires_review && isAnswerApproved(answer)).length
+  (filteredAnswers.value || []).filter(answer => !answer.requires_review && isAnswerApproved(answer)).length
 )
 
 const rejectedCount = computed(() => 
-  filteredAnswers.value.filter(answer => !answer.requires_review && !isAnswerApproved(answer)).length
+  (filteredAnswers.value || []).filter(answer => !answer.requires_review && !isAnswerApproved(answer)).length
 )
 
 // Загрузка данных
@@ -228,21 +316,30 @@ const loadData = async () => {
     isLoading.value = true
     error.value = null
     
+    console.log(`🔄 Загрузка данных для режима: ${viewMode.value}`)
+    
     switch (viewMode.value) {
       case 'pending':
         await instructorStore.loadPendingTextAnswers()
+        console.log('✅ Pending answers loaded:', instructorStore.pendingTextAnswers.length)
         break
       case 'all':
         await instructorStore.loadAllTextAnswers()
+        console.log('✅ All answers loaded:', instructorStore.allTextAnswers.length)
         break
       case 'student':
         if (selectedStudentId.value) {
           await instructorStore.loadStudentTextAnswers(selectedStudentId.value)
+          console.log('✅ Student answers loaded:', instructorStore.studentTextAnswers.length)
+        } else {
+          // Если студент не выбран, очищаем список
+          instructorStore.studentTextAnswers = []
         }
         break
     }
   } catch (err: any) {
     error.value = err.message || 'Ошибка загрузки ответов'
+    console.error('❌ Ошибка загрузки:', err)
   } finally {
     isLoading.value = false
   }
@@ -252,20 +349,23 @@ const loadData = async () => {
 const onStudentChange = () => {
   if (viewMode.value === 'student' && selectedStudentId.value) {
     loadData()
+  } else if (viewMode.value === 'student' && !selectedStudentId.value) {
+    // Если студент сброшен, очищаем список
+    instructorStore.studentTextAnswers = []
   }
 }
 
-// Открытие модального окна (без изменений)
+// Открытие модального окна с защитой
 const openReview = (answer: TextAnswer) => {
   selectedAnswer.value = answer
   reviewData.value = {
     is_approved: true,
-    score: answer.question.points,
+    score: answer.question?.points || 0,
     feedback: ''
   }
 }
 
-// Закрытие модального окна (без изменений)
+// Закрытие модального окна
 const closeModal = () => {
   selectedAnswer.value = null
   reviewData.value = {
@@ -275,7 +375,7 @@ const closeModal = () => {
   }
 }
 
-// Отправка оценки (без изменений)
+// Отправка оценки с защитой
 const submitReview = async () => {
   if (!selectedAnswer.value) return
 
@@ -283,30 +383,34 @@ const submitReview = async () => {
     isSubmitting.value = true
     await instructorStore.reviewTextAnswer(selectedAnswer.value.id, reviewData.value)
     closeModal()
-    await loadData() // Перезагружаем данные после проверки
+    await loadData()
   } catch (err: any) {
     error.value = err.message || 'Ошибка сохранения оценки'
+    console.error('❌ Ошибка сохранения:', err)
   } finally {
     isSubmitting.value = false
   }
 }
 
-// Вспомогательные функции
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('ru-RU')
+// Вспомогательные функции с защитой
+const formatDate = (dateString: string): string => {
+  try {
+    return new Date(dateString).toLocaleDateString('ru-RU')
+  } catch {
+    return 'Неизвестная дата'
+  }
 }
 
-const truncateText = (text: string, maxLength: number) => {
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return ''
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 }
 
-const isAnswerApproved = (answer: any): boolean => {
-  // Предполагаем, что у ответа есть поле is_approved после проверки
+const isAnswerApproved = (answer: TextAnswer): boolean => {
   return answer.is_approved === true
 }
 
-const getAnswerScore = (answer: any): number => {
-  // Предполагаем, что у ответа есть поле score после проверки
+const getAnswerScore = (answer: TextAnswer): number => {
   return answer.score || 0
 }
 
@@ -322,7 +426,8 @@ const getStatusClass = (answer: TextAnswer): string => {
 
 // Наблюдатели
 watch(viewMode, (newMode) => {
-  selectedStudentId.value = '' // Сбрасываем выбор студента при смене режима
+  console.log('🔄 Смена режима на:', newMode)
+  selectedStudentId.value = ''
   loadData()
 })
 
@@ -330,14 +435,87 @@ watch([sortBy], () => {
   // Просто обновляем сортировку, не перезагружая данные
 })
 
-// Инициализация
+// Инициализация - загружаем данные для текущего режима
 onMounted(() => {
+  console.log('🚀 Инициализация страницы текстовых ответов')
   loadData()
 })
 </script>
 
 <style scoped>
-/* Существующие стили остаются */
+.text-answers {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Хедер */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.back-button {
+  background: none;
+  border: 1px solid #ddd;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.page-header p {
+  color: #666;
+  margin: 0;
+}
+
+/* Состояния */
+.state-message {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.state-message.error {
+  color: #e74c3c;
+}
+
+.subtext {
+  color: #666;
+  margin-top: 8px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #8C4CC3;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.text-button {
+  background: none;
+  border: none;
+  color: #8C4CC3;
+  cursor: pointer;
+  margin-top: 8px;
+}
 
 /* Панель фильтров */
 .filters-panel {
@@ -408,7 +586,66 @@ onMounted(() => {
   color: #666;
 }
 
-/* Статус-баджи в карточках */
+/* Список ответов */
+.answers-content {
+  margin-top: 20px;
+}
+
+.answers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.answer-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 4px solid #8C4CC3;
+}
+
+.answer-card:hover {
+  border-color: #8C4CC3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.answer-card.requires-review {
+  border-left-color: #ffa726;
+}
+
+.answer-card.approved {
+  border-left-color: #4caf50;
+}
+
+.answer-card.rejected {
+  border-left-color: #f44336;
+}
+
+.answer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.answer-header h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.test-title {
+  color: #666;
+  font-size: 14px;
+}
+
 .status-badge {
   padding: 4px 8px;
   border-radius: 12px;
@@ -432,37 +669,20 @@ onMounted(() => {
   color: #c62828;
 }
 
-/* Стили карточек по статусу */
-.answer-card.requires-review {
-  border-left: 4px solid #ffa726;
+.answer-preview {
+  margin: 16px 0;
 }
 
-.answer-card.approved {
-  border-left: 4px solid #4caf50;
-}
-
-.answer-card.rejected {
-  border-left: 4px solid #f44336;
-}
-
-.answer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.answer-header h3 {
-  margin: 0 0 4px 0;
-  font-size: 16px;
+.question {
   font-weight: 600;
-  flex: 1;
+  margin-bottom: 8px;
+  color: #333;
 }
 
-.test-title {
-  color: #666;
-  font-size: 14px;
+.answer-text {
+  color: #555;
+  line-height: 1.4;
+  margin: 0;
 }
 
 .answer-meta {
@@ -478,8 +698,195 @@ onMounted(() => {
   color: #8C4CC3;
 }
 
+/* Модальное окно */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 0;
+  margin-bottom: 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+/* Блоки в модальном окне */
+.question-info,
+.student-answer,
+.review-form {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.question-info:last-child,
+.student-answer:last-child,
+.review-form:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.question-info h3,
+.student-answer h3,
+.review-form h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.question-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+.answer-content {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+  margin: 12px 0;
+}
+
+.student-info {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: #666;
+}
+
+/* Форма оценки */
+.score-section,
+.score-input,
+.feedback-section {
+  margin-bottom: 20px;
+}
+
+.score-options {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.score-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.score-btn.active {
+  border-color: #8C4CC3;
+  background: #f3f0ff;
+}
+
+.score-field {
+  width: 100px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.feedback-field {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-family: inherit;
+  resize: vertical;
+  margin-top: 8px;
+}
+
+.feedback-field:focus {
+  outline: none;
+  border-color: #8C4CC3;
+}
+
+/* Кнопки действий */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  padding: 0 24px 24px;
+}
+
+.primary-btn {
+  flex: 1;
+  padding: 12px 24px;
+  background: #8C4CC3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.primary-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  padding: 12px 24px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
+  .text-answers {
+    padding: 16px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
   .filters-panel {
     flex-direction: column;
     gap: 16px;
@@ -504,6 +911,15 @@ onMounted(() => {
   .answer-meta {
     flex-direction: column;
     gap: 8px;
+  }
+  
+  .modal-content {
+    margin: 0;
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
   }
 }
 </style>

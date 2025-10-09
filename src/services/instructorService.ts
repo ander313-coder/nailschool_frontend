@@ -7,49 +7,31 @@ import type {
   HomeworkFilters,
 } from '@/types/api'
 
+// Тип для пагинированного ответа
+interface PaginatedResponse<T> {
+  count: number
+  results: T[]
+}
+
+/**
+ * Сервис для работы с функционалом преподавателя
+ */
 export const instructorService = {
   /**
    * Получить ДЗ на проверку
    */
   async getPendingHomeworks(): Promise<Homework[]> {
-    console.log('📥 Запрос ДЗ на проверку...')
-    const response = await apiClient.get('/homework/pending-review/')
-    console.log('✅ Получены ДЗ на проверку:', response.data.results)
-    return response.data.results
+    const response = await apiClient.get('/instructor/homeworks/pending/')
+    return response.data
   },
 
   /**
-   * Получить все ДЗ (с фильтрацией)
+   * Получить все ДЗ (с фильтрами)
    */
   async getAllHomeworks(filters?: HomeworkFilters): Promise<Homework[]> {
-    console.log('📥 Запрос всех ДЗ...', filters)
-
-    const params = new URLSearchParams()
-    if (filters?.status) params.append('status', filters.status)
-    if (filters?.course_id) params.append('course_id', filters.course_id.toString())
-
-    const url = params.toString() ? `/homework/?${params}` : '/homework/'
-    const response = await apiClient.get(url)
-
-    console.log('🔍 СЫРЫЕ ДАННЫЕ ОТ API (/homework/):', response.data)
-
-    // Логируем структуру первого элемента для отладки
-    if (response.data && response.data.length > 0) {
-      console.log('📊 Структура первого ДЗ:', {
-        id: response.data[0].id,
-        user: response.data[0].user,
-        lesson: response.data[0].lesson,
-        status: response.data[0].status,
-        hasUser: !!response.data[0].user,
-        hasLesson: !!response.data[0].lesson,
-        userStructure: response.data[0].user ? Object.keys(response.data[0].user) : 'NO USER',
-        lessonStructure: response.data[0].lesson
-          ? Object.keys(response.data[0].lesson)
-          : 'NO LESSON',
-      })
-    }
-
-    console.log('✅ Получены все ДЗ:', response.data)
+    const response = await apiClient.get('/instructor/homeworks/', {
+      params: filters,
+    })
     return response.data
   },
 
@@ -58,36 +40,60 @@ export const instructorService = {
    */
   async getPendingTextAnswers(): Promise<TextAnswer[]> {
     console.log('📥 Запрос текстовых ответов на проверку...')
-    const response = await apiClient.get('/instructor/text-answers/pending/')
-    console.log('✅ Получены текстовые ответы:', response.data.results)
-    return response.data.results
+    const response = await apiClient.get<PaginatedResponse<TextAnswer>>(
+      '/instructor/text-answers/pending/',
+    )
+    console.log('📋 Ответ от API (pending):', response.data)
+
+    // Извлекаем данные из поля results
+    const answers = response.data.results || []
+    console.log(`✅ Извлечено ${answers.length} ответов на проверку`)
+    return answers
   },
+
   /**
    * Получить все текстовые ответы (с фильтрами)
    */
   async getAllTextAnswers(filters?: { user_id?: number }): Promise<TextAnswer[]> {
-    const response = await apiClient.get('/api/instructor/text-answers/', {
-      params: filters,
-    })
-    return response.data
+    console.log('🔍 Запрос всех текстовых ответов с фильтрами:', filters)
+    console.log('🌐 BaseURL:', apiClient.defaults.baseURL)
+
+    const response = await apiClient.get<PaginatedResponse<TextAnswer>>(
+      '/instructor/text-answers/',
+      {
+        params: filters,
+      },
+    )
+
+    console.log('📋 Ответ от API (all):', response.data)
+
+    // Извлекаем данные из поля results
+    const answers = response.data.results || []
+    console.log(`✅ Извлечено ${answers.length} всех ответов`)
+    return answers
   },
 
   /**
    * Получить текстовые ответы конкретного студента
    */
   async getStudentTextAnswers(userId: number): Promise<TextAnswer[]> {
-    const response = await apiClient.get(`/api/instructor/text-answers/student/${userId}/`)
-    return response.data
+    console.log(`📥 Запрос текстовых ответов студента ${userId}...`)
+    const response = await apiClient.get<PaginatedResponse<TextAnswer>>(
+      `/instructor/text-answers/student/${userId}/`,
+    )
+    console.log('📋 Ответ от API (student):', response.data)
+
+    // Извлекаем данные из поля results
+    const answers = response.data.results || []
+    console.log(`✅ Извлечено ${answers.length} ответов студента`)
+    return answers
   },
 
   /**
    * Проверить домашнее задание
    */
   async reviewHomework(homeworkId: number, reviewData: HomeworkReviewData): Promise<Homework> {
-    console.log(`📝 Проверяем ДЗ ${homeworkId}:`, reviewData)
-
-    const response = await apiClient.patch(`/homework/${homeworkId}/`, reviewData)
-    console.log('✅ ДЗ проверено:', response.data)
+    const response = await apiClient.patch(`/instructor/homeworks/${homeworkId}/`, reviewData)
     return response.data
   },
 
@@ -96,12 +102,9 @@ export const instructorService = {
    */
   async reviewTextAnswer(answerId: number, reviewData: TextAnswerReviewData): Promise<void> {
     const response = await apiClient.patch(
-      `/api/instructor/text-answers/${answerId}/review/`,
+      `/instructor/text-answers/${answerId}/review/`,
       reviewData,
     )
-    console.log('✅ Текстовый ответ проверен:', response.data)
     return response.data
   },
 }
-
-export default instructorService
