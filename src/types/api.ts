@@ -140,20 +140,21 @@ export interface HomeworkFile {
   id: number
   file: string
   uploaded_at: string
+  url?: string
 }
 
 export interface Homework {
   id: number
   user?: {
-    // Делаем опциональным, так как может быть undefined
     id: number
     username: string
     email: string
+    first_name?: string
+    last_name?: string
   }
   lesson:
     | number
     | {
-        // Может быть ID или объектом
         id: number
         title: string
         course?: {
@@ -161,6 +162,8 @@ export interface Homework {
           title: string
         }
       }
+  lesson_title?: string
+  course_title?: string
   comment: string
   instructor_comment: string
   status: HomeworkStatus

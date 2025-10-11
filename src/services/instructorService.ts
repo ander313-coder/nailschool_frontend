@@ -21,18 +21,32 @@ export const instructorService = {
    * Получить ДЗ на проверку
    */
   async getPendingHomeworks(): Promise<Homework[]> {
-    const response = await apiClient.get('/instructor/homeworks/pending/')
-    return response.data
+    console.log('📥 Запрос ДЗ на проверку...')
+    const response = await apiClient.get<PaginatedResponse<Homework>>(
+      '/instructor/homeworks/pending/',
+    )
+    console.log('📋 Ответ от API (pending homeworks):', response.data)
+
+    // Извлекаем данные из поля results
+    const homeworks = response.data.results || []
+    console.log(`✅ Извлечено ${homeworks.length} ДЗ на проверку`)
+    return homeworks
   },
 
   /**
    * Получить все ДЗ (с фильтрами)
    */
   async getAllHomeworks(filters?: HomeworkFilters): Promise<Homework[]> {
-    const response = await apiClient.get('/instructor/homeworks/', {
+    console.log('📥 Запрос всех ДЗ с фильтрами:', filters)
+    const response = await apiClient.get<PaginatedResponse<Homework>>('/instructor/homeworks/', {
+      // ← ПРАВИЛЬНЫЙ URL
       params: filters,
     })
-    return response.data
+    console.log('📋 Ответ от API (all homeworks):', response.data)
+
+    const homeworks = response.data.results || []
+    console.log(`✅ Извлечено ${homeworks.length} всех ДЗ`)
+    return homeworks
   },
 
   /**
@@ -93,7 +107,9 @@ export const instructorService = {
    * Проверить домашнее задание
    */
   async reviewHomework(homeworkId: number, reviewData: HomeworkReviewData): Promise<Homework> {
+    console.log(`📝 Проверка ДЗ ${homeworkId}:`, reviewData)
     const response = await apiClient.patch(`/instructor/homeworks/${homeworkId}/`, reviewData)
+    console.log('✅ ДЗ проверено:', response.data)
     return response.data
   },
 
@@ -101,10 +117,12 @@ export const instructorService = {
    * Проверить текстовый ответ
    */
   async reviewTextAnswer(answerId: number, reviewData: TextAnswerReviewData): Promise<void> {
+    console.log(`📝 Проверка текстового ответа ${answerId}:`, reviewData)
     const response = await apiClient.patch(
       `/instructor/text-answers/${answerId}/review/`,
       reviewData,
     )
+    console.log('✅ Текстовый ответ проверен:', response.data)
     return response.data
   },
 }

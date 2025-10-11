@@ -5,7 +5,13 @@
       <h1>Проверка домашних заданий</h1>
       <p>Домашние задания, ожидающие вашей проверки</p>
     </div>
-
+        <!-- Временно добавим отладочный блок -->
+      <div v-if="true" class="debug-structure" style="background: #fff3cd; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+        <h4 style="margin: 0 0 10px 0; color: #856404;">🔍 СТРУКТУРА ДАННЫХ ДЗ:</h4>
+        <div v-for="hw in instructorStore.allHomeworks.slice(0, 1)" :key="hw.id">
+          <pre style="font-size: 12px; background: white; padding: 8px; border-radius: 4px; overflow: auto; max-height: 300px;">{{ JSON.stringify(hw, null, 2) }}</pre>
+        </div>
+      </div>
     <!-- Статистика по статусам -->
     <div class="stats-cards">
       <div class="stat-card" :class="getStatusClass('ALL')" @click="setFilter('ALL')">
@@ -126,15 +132,23 @@
 
           <!-- Файлы -->
           <div v-if="homework.files && homework.files.length > 0" class="homework-files">
-            <strong>Прикрепленные файлы:</strong>
+            <strong>Прикрепленные файлы ({{ homework.files.length }}):</strong>
             <div class="files-list">
-              <span
-                v-for="file in homework.files"
+              <div 
+                v-for="file in homework.files" 
                 :key="file.id"
-                class="file-tag"
+                class="file-item"
+                @click="openFile(getFileUrl(file.file))"
               >
-                📎 {{ getFileName(file.file) }}
-              </span>
+                <div class="file-icon">📎</div>
+                <div class="file-info">
+                  <div class="file-name">{{ getFileName(file.file) }}</div>
+                  <div class="file-date">{{ formatDate(file.uploaded_at) }}</div>
+                </div>
+                <button class="download-btn" @click.stop="downloadFile(getFileUrl(file.file))">
+                  📥
+                </button>
+              </div>
             </div>
           </div>
 
@@ -228,6 +242,24 @@ const filteredHomeworks = computed(() => {
   return filtered
 })
 
+// Методы для работы с файлами
+const openFile = (fileUrl: string) => {
+  console.log('🔗 Открываем файл:', fileUrl)
+  if (fileUrl) {
+    window.open(fileUrl, '_blank')
+  }
+}
+
+const downloadFile = (fileUrl: string) => {
+  console.log('📥 Скачиваем файл:', fileUrl)
+  if (fileUrl) {
+    const link = document.createElement('a')
+    link.href = fileUrl
+    link.download = getFileName(fileUrl)
+    link.click()
+  }
+}
+
 // Методы
 const loadHomeworks = async () => {
   try {
@@ -271,24 +303,42 @@ const getStatusClass = (status: string) => {
 }
 
 const getHomeworkUserName = (homework: Homework): string => {
-  if (typeof homework.user === 'object' && homework.user !== null) {
-    return homework.user.username || 'Неизвестный студент'
+  console.log('👤 Homework user structure:', homework.user)
+  
+  // Если user undefined или null, возвращаем заглушку
+  if (!homework.user) {
+    return 'Студент #' + (homework.id || '?')
   }
+  
+  if (typeof homework.user === 'object') {
+    return (homework.user.first_name) + " " + (homework.user.last_name) || `Студент ${homework.user.id}`
+  }
+  
   return 'Неизвестный студент'
 }
 
 const getHomeworkLessonTitle = (homework: Homework): string => {
+  console.log('📚 Homework lesson structure:', homework.lesson)
+  
+  // Если lesson - это объект с названием
   if (typeof homework.lesson === 'object' && homework.lesson !== null) {
-    return homework.lesson.title || 'Без названия'
+    return homework.lesson.title || `Урок ${homework.lesson.id}`
   }
-  return 'Без названия'
+  
+  // Если lesson - это просто ID
+  return `Урок ${homework.lesson}`
 }
 
 const getHomeworkCourseTitle = (homework: Homework): string => {
-  if (typeof homework.lesson === 'object' && homework.lesson !== null && homework.lesson.course) {
-    return homework.lesson.course.title || 'Без курса'
+  console.log('🎓 Homework course structure:', homework)
+
+  if (homework.course_title) {
+    console.log('✅ Найден course_title:', homework.course_title)
+    return homework.course_title
   }
-  return 'Без курса'
+  
+  console.log('❌ Курс не найден в данных')
+  return 'Курс не указан'
 }
 
 const getStudentInitial = (homework: Homework): string => {
@@ -306,7 +356,63 @@ const formatDate = (dateString: string): string => {
 }
 
 const getFileName = (filePath: string): string => {
-  return filePath.split('/').pop() || 'Файл'
+  console.log('📎 File path:', filePath)
+  
+  if (!filePath) return 'Файл'
+  
+  // Обрабатываем разные форматы путей
+  const fileName = filePath.split('/').pop() || 'Файл'
+  console.log('📎 Extracted file name:', fileName)
+  return fileName
+}
+
+// Функция для получения полного URL файла
+const getFileUrl = (filePath: string): string => {
+  if (!filePath) return ''
+  
+  // Если это уже полный URL
+  if (filePath.startsWith('http')) {
+    return filePath
+  }
+  
+  // Если это относительный путь, добавляем базовый URL
+  const baseUrl = 'http://localhost:8000'
+  
+  // Убираем лишние слеши
+  const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`
+  
+  return `${baseUrl}${cleanPath}`
+}
+
+const testFileAccess = async (file: any) => {
+  console.log('🧪 Тестируем доступ к файлу:', file)
+  
+  try {
+    // Пробуем разные варианты URL
+    const possibleUrls = [
+      file.file,
+      file.url,
+      `/media/${file.file}`,
+      `http://localhost:8000${file.file}`,
+      `http://localhost:8000/media/${file.file}`
+    ]
+    
+    for (const url of possibleUrls) {
+      if (!url) continue
+      
+      console.log(`🔗 Пробуем URL: ${url}`)
+      const response = await fetch(url, { method: 'HEAD' })
+      if (response.ok) {
+        console.log(`✅ Файл доступен по URL: ${url}`)
+        window.open(url, '_blank')
+        return
+      }
+    }
+    
+    console.log('❌ Ни один URL не сработал')
+  } catch (error) {
+    console.error('❌ Ошибка доступа к файлу:', error)
+  }
 }
 
 // Загрузка данных при монтировании

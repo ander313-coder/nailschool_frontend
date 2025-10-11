@@ -53,7 +53,10 @@ export const useInstructorStore = defineStore('instructor', () => {
       error.value = null
       console.log('🔄 Загружаем ДЗ на проверку...')
 
-      pendingHomeworks.value = await instructorService.getPendingHomeworks()
+      const homeworks = await instructorService.getPendingHomeworks()
+      // Убедимся, что это массив
+      pendingHomeworks.value = Array.isArray(homeworks) ? homeworks : []
+
       console.log(`✅ Загружено ${pendingHomeworks.value.length} ДЗ на проверку`)
     } catch (err: any) {
       error.value = err.message || 'Ошибка при загрузке ДЗ на проверку'
@@ -73,7 +76,9 @@ export const useInstructorStore = defineStore('instructor', () => {
       error.value = null
       console.log('🔄 Загружаем все ДЗ...')
 
-      allHomeworks.value = await instructorService.getAllHomeworks(filters)
+      const homeworks = await instructorService.getAllHomeworks(filters)
+      allHomeworks.value = Array.isArray(homeworks) ? homeworks : []
+
       console.log(`✅ Загружено ${allHomeworks.value.length} ДЗ`)
     } catch (err: any) {
       error.value = err.message || 'Ошибка при загрузке ДЗ'
@@ -83,7 +88,6 @@ export const useInstructorStore = defineStore('instructor', () => {
       isLoading.value = false
     }
   }
-
   /** Загрузить текстовые ответы на проверку
    */
   const loadPendingTextAnswers = async (): Promise<void> => {

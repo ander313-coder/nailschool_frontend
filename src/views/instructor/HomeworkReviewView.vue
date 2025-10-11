@@ -5,7 +5,14 @@
       <button @click="$router.back()" class="back-button">← Назад</button>
       <h1>Проверка ДЗ</h1>
     </div>
-
+        <!-- Временно покажем полную структуру ДЗ -->
+    <div v-if="true" class="debug-homework" style="background: #fff3cd; padding: 15px; margin: 10px 0; border-radius: 6px;">
+      <h4>🔍 ДЕБАГ СТРУКТУРА ДЗ:</h4>
+      <div v-for="hw in instructorStore.allHomeworks.slice(0, 2)" :key="hw.id">
+        <strong>ДЗ ID: {{ hw.id }}</strong>
+        <pre style="font-size: 12px; background: white; padding: 8px; border-radius: 4px; overflow: auto;">{{ JSON.stringify(hw, null, 2) }}</pre>
+      </div>
+    </div>
     <!-- Состояния -->
     <div v-if="isLoading" class="state-message">
       <div class="spinner"></div>
@@ -131,17 +138,44 @@ const homeworkId = computed(() => {
 
 // Вспомогательные функции
 const getUserName = (hw: Homework): string => {
-  return hw.user && typeof hw.user === 'object' ? hw.user.username : 'Неизвестный студент'
+  if (hw.user && typeof hw.user === 'object') {
+    const username = (hw.user.first_name) + " " + (hw.user.last_name)|| `Студент ${hw.user.id}`
+    return username
+  }
+  return 'Неизвестный студент'
 }
 
 const getLessonTitle = (hw: Homework): string => {
-  return hw.lesson && typeof hw.lesson === 'object' ? hw.lesson.title : `Урок #${hw.lesson}`
+  // Используем прямое поле lesson_title если оно есть
+  if (hw.lesson_title) {
+    return hw.lesson_title
+  }
+  
+  // Если lesson_title нет, но lesson есть (ID)
+  if (hw.lesson) {
+    if (typeof hw.lesson === 'object' && hw.lesson.title) {
+      return hw.lesson.title
+    }
+    if (typeof hw.lesson === 'number') {
+      return `Урок ${hw.lesson}`
+    }
+  }
+  
+  return 'Без названия'
 }
 
 const getCourseTitle = (hw: Homework): string => {
-  return hw.lesson && typeof hw.lesson === 'object' && hw.lesson.course 
-    ? hw.lesson.course.title 
-    : 'Без курса'
+  // Используем прямое поле course_title если оно есть
+  if (hw.course_title) {
+    return hw.course_title
+  }
+  
+  // Если course_title нет, но есть вложенный курс
+  if (hw.lesson && typeof hw.lesson === 'object' && hw.lesson.course) {
+    return hw.lesson.course.title || 'Без курса'
+  }
+  
+  return 'Без курса'
 }
 
 // Загрузка данных
