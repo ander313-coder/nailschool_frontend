@@ -14,13 +14,13 @@
             <div class="avatar-section">
               <div class="avatar-preview">
                 <img 
-                  v-if="user.avatar" 
+                  v-if="user?.avatar" 
                   :src="user.avatar" 
                   :alt="user.username"
                   class="avatar-image"
                 />
                 <div v-else class="avatar-placeholder">
-                  {{ user.first_name?.charAt(0) || user.username?.charAt(0) }}
+                  {{ user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U' }}
                 </div>
               </div>
               <div class="avatar-controls">
@@ -32,10 +32,10 @@
                   class="avatar-input"
                 />
                 <button @click="triggerAvatarUpload" class="avatar-btn">
-                  {{ user.avatar ? 'Изменить' : 'Загрузить' }} фото
+                  {{ user?.avatar ? 'Изменить' : 'Загрузить' }} фото
                 </button>
                 <button 
-                  v-if="user.avatar" 
+                  v-if="user?.avatar" 
                   @click="removeAvatar"
                   class="avatar-remove-btn"
                 >
@@ -191,12 +191,13 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import type { User, ProfileFormData } from '@/types/api'
 
 const authStore = useAuthStore()
 const avatarInput = ref<HTMLInputElement>()
 
 // Данные формы
-const formData = reactive({
+const formData = reactive<ProfileFormData>({
   username: '',
   email: '',
   first_name: '',
@@ -214,10 +215,11 @@ const passwordData = reactive({
 // Состояния
 const isLoading = ref(false)
 const isChangingPassword = ref(false)
-const originalData = ref({})
+const originalData = ref<ProfileFormData>({} as ProfileFormData)
 
 // Вычисляемые свойства
-const user = computed(() => authStore.user || {})
+const user = computed(() => authStore.user)
+
 const isFormChanged = computed(() => {
   return JSON.stringify(formData) !== JSON.stringify(originalData.value)
 })
@@ -237,13 +239,14 @@ onMounted(() => {
 
 const initializeForm = () => {
   if (authStore.user) {
+    const currentUser = authStore.user
     Object.assign(formData, {
-      username: authStore.user.username || '',
-      email: authStore.user.email || '',
-      first_name: authStore.user.first_name || '',
-      last_name: authStore.user.last_name || '',
-      phone: authStore.user.phone || '',
-      bio: authStore.user.bio || ''
+      username: currentUser.username || '',
+      email: currentUser.email || '',
+      first_name: currentUser.first_name || '',
+      last_name: currentUser.last_name || '',
+      phone: currentUser.phone || '',
+      bio: currentUser.bio || ''
     })
     originalData.value = { ...formData }
   }
@@ -258,22 +261,31 @@ const handleAvatarUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files[0]) {
     const file = target.files[0]
-    // TODO: Реализовать загрузку аватарки
-    console.log('Загружаем аватар:', file)
+    try {
+      await authStore.uploadAvatar(file)
+      if (avatarInput.value) {
+        avatarInput.value.value = ''
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке аватарки:', error)
+    }
   }
 }
 
 const removeAvatar = async () => {
-  // TODO: Реализовать удаление аватарки
-  console.log('Удаляем аватар')
+  try {
+    await authStore.removeAvatar()
+  } catch (error) {
+    console.error('Ошибка при удалении аватарки:', error)
+  }
 }
 
 const updateProfile = async () => {
   isLoading.value = true
   try {
-    // TODO: Реализовать обновление профиля
     await authStore.updateProfile(formData)
     originalData.value = { ...formData }
+    console.log('Профиль успешно обновлен')
   } catch (error) {
     console.error('Ошибка при обновлении профиля:', error)
   } finally {
@@ -284,14 +296,17 @@ const updateProfile = async () => {
 const changePassword = async () => {
   isChangingPassword.value = true
   try {
-    // TODO: Реализовать смену пароля
-    console.log('Меняем пароль:', passwordData)
-    // Сброс формы пароля
+    await authStore.changePassword({
+      current_password: passwordData.current_password,
+      new_password: passwordData.new_password,
+      confirm_password: passwordData.confirm_password
+    })
     Object.assign(passwordData, {
       current_password: '',
       new_password: '',
       confirm_password: ''
     })
+    console.log('Пароль успешно изменен')
   } catch (error) {
     console.error('Ошибка при смене пароля:', error)
   } finally {
@@ -313,44 +328,44 @@ const resetForm = () => {
 
 .settings-header {
   margin-bottom: 2rem;
+  text-align: center;
 }
 
 .settings-header h1 {
   font-size: 2rem;
-  font-weight: 700;
+  color: #333;
   margin-bottom: 0.5rem;
-  color: var(--text-primary);
 }
 
 .settings-header p {
-  color: var(--text-secondary);
+  color: #666;
   font-size: 1.1rem;
 }
 
 .settings-section {
   background: white;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 2rem;
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .settings-section h2 {
   font-size: 1.5rem;
-  font-weight: 600;
+  color: #333;
   margin-bottom: 1.5rem;
-  color: var(--text-primary);
+  border-bottom: 2px solid #8C4CC3;
+  padding-bottom: 0.5rem;
 }
 
-/* Аватар */
+/* Аватар секция */
 .avatar-section {
   display: flex;
   align-items: center;
   gap: 2rem;
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #eee;
 }
 
 .avatar-preview {
@@ -358,7 +373,7 @@ const resetForm = () => {
   height: 100px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--gray-100);
+  background: #f5f5f5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -373,13 +388,13 @@ const resetForm = () => {
 .avatar-placeholder {
   width: 100%;
   height: 100%;
-  background: var(--primary);
+  background: #8C4CC3;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2rem;
-  font-weight: 600;
+  font-weight: bold;
 }
 
 .avatar-controls {
@@ -394,25 +409,38 @@ const resetForm = () => {
 
 .avatar-btn {
   padding: 0.5rem 1rem;
-  background: var(--primary);
+  background: #8C4CC3;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  transition: background 0.3s;
+}
+
+.avatar-btn:hover {
+  background: #7a3cb0;
 }
 
 .avatar-remove-btn {
   padding: 0.5rem 1rem;
-  background: var(--error-light);
-  color: var(--error);
-  border: 1px solid var(--error);
-  border-radius: 6px;
+  background: #FF6B6B;
+  color: white;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  transition: background 0.3s;
+}
+
+.avatar-remove-btn:hover {
+  background: #e55a5a;
 }
 
 /* Формы */
+.profile-form,
+.password-form {
+  width: 100%;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -429,29 +457,30 @@ const resetForm = () => {
 }
 
 .form-group label {
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 0.5rem;
-  color: var(--text-primary);
+  color: #333;
 }
 
 .form-input,
 .form-textarea {
   padding: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  transition: border-color 0.3s;
 }
 
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: #8C4CC3;
 }
 
 .form-input:disabled {
-  background: var(--gray-50);
-  color: var(--text-secondary);
+  background: #f5f5f5;
+  color: #666;
+  cursor: not-allowed;
 }
 
 .form-textarea {
@@ -460,55 +489,55 @@ const resetForm = () => {
 }
 
 .field-hint {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+  font-size: 0.875rem;
+  color: #666;
   margin-top: 0.25rem;
 }
 
-/* Кнопки */
 .form-actions {
   display: flex;
   gap: 1rem;
   margin-top: 2rem;
+  justify-content: flex-start;
 }
 
 .save-btn {
   padding: 0.75rem 2rem;
-  background: var(--primary);
+  background: #8C4CC3;
   color: white;
   border: none;
-  border-radius: 6px;
-  font-weight: 500;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background 0.2s;
+  font-size: 1rem;
+  transition: background 0.3s;
 }
 
 .save-btn:hover:not(:disabled) {
-  background: var(--primary-dark);
+  background: #7a3cb0;
 }
 
 .save-btn:disabled {
-  background: var(--gray-300);
+  background: #ccc;
   cursor: not-allowed;
 }
 
 .cancel-btn {
   padding: 0.75rem 2rem;
-  background: white;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
+  font-size: 1rem;
+  transition: background 0.3s;
 }
 
 .cancel-btn:hover:not(:disabled) {
-  background: var(--gray-50);
-  border-color: var(--gray-300);
+  background: #5a6268;
 }
 
 .cancel-btn:disabled {
-  opacity: 0.5;
+  background: #ccc;
   cursor: not-allowed;
 }
 
@@ -529,6 +558,7 @@ const resetForm = () => {
   .avatar-section {
     flex-direction: column;
     text-align: center;
+    gap: 1rem;
   }
   
   .form-actions {

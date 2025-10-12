@@ -16,6 +16,15 @@ export interface User {
   level?: string
 }
 
+export interface ProfileFormData {
+  username: string
+  email: string
+  first_name: string
+  last_name: string
+  phone: string
+  bio: string
+}
+
 // Типы для курсов
 export interface Course {
   id: number
