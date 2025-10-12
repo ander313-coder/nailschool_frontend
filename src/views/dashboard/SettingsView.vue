@@ -1,5 +1,4 @@
 <template>
-  <DashboardLayout>
     <div class="settings-view">
       <div class="page-header">
         <h1>Настройки</h1>
@@ -14,11 +13,10 @@
         </div>
       </div>
     </div>
-  </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-import DashboardLayout from './DashboardLayout.vue';
+
 </script>
 
 <style scoped>

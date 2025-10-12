@@ -1,5 +1,4 @@
 <template>
-  <DashboardLayout>
     <div class="profile-settings">
       <div class="settings-header">
         <h1>Настройки профиля</h1>
@@ -187,13 +186,11 @@
         </div>
       </div>
     </div>
-  </DashboardLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import DashboardLayout from './DashboardLayout.vue'
 
 const authStore = useAuthStore()
 const avatarInput = ref<HTMLInputElement>()

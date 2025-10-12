@@ -5,13 +5,6 @@
       <h1>Проверка домашних заданий</h1>
       <p>Домашние задания, ожидающие вашей проверки</p>
     </div>
-        <!-- Временно добавим отладочный блок -->
-      <div v-if="true" class="debug-structure" style="background: #fff3cd; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
-        <h4 style="margin: 0 0 10px 0; color: #856404;">🔍 СТРУКТУРА ДАННЫХ ДЗ:</h4>
-        <div v-for="hw in instructorStore.allHomeworks.slice(0, 1)" :key="hw.id">
-          <pre style="font-size: 12px; background: white; padding: 8px; border-radius: 4px; overflow: auto; max-height: 300px;">{{ JSON.stringify(hw, null, 2) }}</pre>
-        </div>
-      </div>
     <!-- Статистика по статусам -->
     <div class="stats-cards">
       <div class="stat-card" :class="getStatusClass('ALL')" @click="setFilter('ALL')">

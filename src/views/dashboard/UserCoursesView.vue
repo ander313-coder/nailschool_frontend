@@ -1,19 +1,15 @@
 <template>
-  <DashboardLayout>
     <div class="user-courses-page">
       <!-- Заголовок страницы -->
       <div class="page-header">
         <h1>Мои курсы</h1>
         <p>Все курсы, доступные для вашего обучения</p>
       </div>
-
       <UserCourses />
     </div>
-  </DashboardLayout>
 </template>
 
 <script setup lang="ts">
-import DashboardLayout from './DashboardLayout.vue';
 import UserCourses from '@/components/dashboard/UserCourses.vue'; 
 </script>
 

@@ -61,17 +61,7 @@
                   @click="closeDropdown"
                 >
                   Мои курсы
-                </router-link>
-                
-                <router-link 
-                  to="/progress" 
-                  class="dropdown-item"
-                  @click="closeDropdown"
-                >
-                  Прогресс
-                </router-link>
-                
-                <div class="dropdown-divider"></div>
+                </router-link>            
                 
                 <!-- Настройки и выход -->
                 <router-link 
@@ -80,15 +70,7 @@
                   @click="closeDropdown"
                 >
                   Профиль
-                </router-link>
-                
-                <router-link 
-                  to="/settings" 
-                  class="dropdown-item"
-                  @click="closeDropdown"
-                >
-                  Настройки
-                </router-link>
+                </router-link>                
                 
                 <div class="dropdown-divider"></div>
                 

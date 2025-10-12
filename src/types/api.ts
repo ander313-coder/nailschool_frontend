@@ -25,6 +25,9 @@ export interface Course {
   course_type: string
   cover_image?: string
   lesson_count?: number
+  instructors?: string[]
+  created_at?: string
+  updated_at?: string
 }
 
 export interface CourseLessonsResponse {
