@@ -22,6 +22,7 @@
             <span class="status-label">Поздравляем!</span>
             <span>Вы достигли максимального уровня</span>
           </div>
+          
           <!-- Прогресс-бар -->
           <div class="progress-container">
             <div class="progress-bar">
@@ -30,7 +31,10 @@
                 :style="{ width: userProgress + '%' }"
               ></div>
             </div>
-            <span class="progress-text">Выполнено {{ userProgress }}%</span>
+            <span class="progress-text">
+              Выполнено {{ userProgress }}% 
+              <span v-if="progressStats">({{ progressStats.completed }}/{{ progressStats.total }} уроков)</span>
+            </span>
           </div>
         </div>
       </div>
@@ -40,19 +44,53 @@
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth';
+import { useDashboardStore } from '@/stores/dashboard';
 import { storeToRefs } from 'pinia';
-import { computed } from 'vue'; 
+import { computed, onMounted } from 'vue'; 
 
 const authStore = useAuthStore();
-const { user } = storeToRefs(authStore); 
+const dashboardStore = useDashboardStore();
+
+const { user } = storeToRefs(authStore);
+const { dashboardData } = storeToRefs(dashboardStore);
+
+// Загружаем данные при монтировании
+onMounted(async () => {
+  await dashboardStore.fetchDashboardData();
+});
 
 const userName = computed(() => {
   if (!user.value) return 'Пользователь';
   return user.value.first_name || user.value.username || 'Пользователь';
 });
 
+// Используем актуальные данные из dashboard API
+const progressStats = computed(() => {
+  if (!dashboardData.value?.active_courses?.length) return null;
+
+  // Считаем общее количество уроков и пройденных уроков из актуальных данных API
+  const totalLessons = dashboardData.value.active_courses.reduce((sum: number, course: any) => {
+    return sum + (course.total_lessons || 0);
+  }, 0);
+
+  const completedLessons = dashboardData.value.active_courses.reduce((sum: number, course: any) => {
+    return sum + (course.completed_lessons || 0);
+  }, 0);
+
+  return {
+    total: totalLessons,
+    completed: completedLessons
+  };
+});
+
+// Общий прогресс на основе актуальных данных API
 const userProgress = computed(() => {
-  return 78;
+  if (!progressStats.value || progressStats.value.total === 0) {
+    return 0;
+  }
+
+  const progress = (progressStats.value.completed / progressStats.value.total) * 100;
+  return Math.min(Math.round(progress), 100);
 });
 
 const nextRole = computed(() => {
@@ -61,12 +99,18 @@ const nextRole = computed(() => {
 
 const currentRole = computed(() => {
   if (!user.value) return '';
+  
+  if (user.value.level) {
+    return user.value.level;
+  }
+  
   const roleMap: Record<string, string> = {
     'TRAINEE': 'Стажер',
     'MASTER': 'Мастер', 
     'INSTRUCTOR': 'Инструктор'
   };
-  return user.value.level || roleMap[user.value.role] || user.value.role;
+  
+  return roleMap[user.value.role] || user.value.role;
 });
 </script>
 

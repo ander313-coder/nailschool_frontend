@@ -101,7 +101,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCoursesStore } from '@/stores/courses'
 import { useAuthStore } from '@/stores/auth'
-import type { Course } from '@/types/api'
+
 
 const router = useRouter()
 const coursesStore = useCoursesStore()

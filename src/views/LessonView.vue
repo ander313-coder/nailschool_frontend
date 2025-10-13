@@ -257,6 +257,8 @@ watch(lessonId, loadLessonData);
 const handleVideoEnd = async () => {
   if (lesson.value && !lesson.value.completed) {
     await courseDetailStore.markLessonCompleted(lessonId.value);
+    // Обновляем прогресс курса
+    await courseDetailStore.refreshCourseProgress(courseId.value);
   }
 };
 
@@ -265,6 +267,8 @@ const handleTimeUpdate = () => {
     const progress = (videoPlayer.value.currentTime / videoPlayer.value.duration) * 100;
     if (progress > 90 && lesson.value && !lesson.value.completed) {
       courseDetailStore.markLessonCompleted(lessonId.value);
+      // Обновляем прогресс курса
+      courseDetailStore.refreshCourseProgress(courseId.value);
     }
   }
 };
@@ -351,6 +355,7 @@ const initializeCompletionState = () => {
     isInitialized.value = true;
   }
 };
+
 // Переключение статуса завершения
 const toggleCompletion = async () => {
   if (isLoadingCompletion.value) return;
@@ -373,6 +378,9 @@ const toggleCompletion = async () => {
       await courseDetailStore.markLessonIncomplete(lessonId.value);
     }
     
+    // ВАЖНО: Обновляем прогресс курса после изменения статуса урока
+    await courseDetailStore.refreshCourseProgress(courseId.value);
+    
     console.log('✅ Статус успешно обновлен');
     
   } catch (error: any) {
@@ -387,6 +395,7 @@ const toggleCompletion = async () => {
     console.log('🔚 Завершение переключения, финальное состояние:', localCompleted.value);
   }
 };
+
 const showHomework = computed(() => {
   return lessonDetail.value?.has_homework || false;
 });

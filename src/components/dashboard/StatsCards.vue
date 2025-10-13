@@ -43,39 +43,41 @@
 </template>
 
 <script setup lang="ts">
-import { useCoursesStore } from '../../stores/courses';
-import { useProgressStore } from '../../stores/progress';
+import { useDashboardStore } from '@/stores/dashboard';
 import { storeToRefs } from 'pinia';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 
-const coursesStore = useCoursesStore();
-const progressStore = useProgressStore();
+const dashboardStore = useDashboardStore();
+const { dashboardData } = storeToRefs(dashboardStore);
 
-const { courses } = storeToRefs(coursesStore);
-const { totalCompletedLessons } = storeToRefs(progressStore);
+// Загружаем данные при монтировании компонента
+onMounted(async () => {
+  await dashboardStore.fetchDashboardData();
+});
 
-// Демо-данные для статистики
-const demoStats = {
-  completedLessons: 8,
-  upcomingTests: 1,
-  averageProgress: 65,
-};
-
-// Вычисляем общую статистику
+// Вычисляем реальную статистику из данных API
 const activeCoursesCount = computed(() => {
-  return courses.value.length || 2;
+  return dashboardData.value?.active_courses?.length || 0;
 });
 
 const completedLessonsCount = computed(() => {
-  return totalCompletedLessons.value || demoStats.completedLessons;
+  return dashboardData.value?.completed_lessons_count || 0;
 });
 
 const averageProgress = computed(() => {
-  return demoStats.averageProgress;
+  if (!dashboardData.value?.active_courses?.length) return 0;
+  
+  const totalProgress = dashboardData.value.active_courses.reduce((sum: number, course: any) => {
+    const completed = course.completed_lessons || 0;
+    const total = course.total_lessons || 1; // избегаем деления на 0
+    return sum + (completed / total) * 100;
+  }, 0);
+  
+  return Math.round(totalProgress / dashboardData.value.active_courses.length);
 });
 
 const upcomingTests = computed(() => {
-  return demoStats.upcomingTests;
+  return dashboardData.value?.pending_tests?.length || 0;
 });
 </script>
 
@@ -83,35 +85,36 @@ const upcomingTests = computed(() => {
 .stats-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 32px;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .stat-card {
-  display: flex;
-  align-items: center;
-  padding: 24px;
   background: white;
+  padding: 1.5rem;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
+  border: 1px solid #e1e5e9;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .stat-icon {
+  font-size: 2rem;
   width: 60px;
   height: 60px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
-  background: #f8f9fa;
-  font-size: 24px;
+  background: linear-gradient(135deg, #8C4CC3, #FF6B6B);
+  border-radius: 12px;
 }
 
 .stat-content {
@@ -119,35 +122,47 @@ const upcomingTests = computed(() => {
 }
 
 .stat-content h3 {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 0.9rem;
   color: #666;
-  margin-bottom: 8px;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .stat-number {
-  font-size: 32px;
+  font-size: 2rem;
   font-weight: 700;
   color: #333;
+  margin: 0 0 0.25rem 0;
   line-height: 1;
-  margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
+  font-size: 0.8rem;
+  color: #888;
+  margin: 0;
 }
 
+/* Адаптивность */
 @media (max-width: 768px) {
   .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .stats-cards {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .stat-card {
+    padding: 1.25rem;
+  }
+  
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+  }
+  
+  .stat-number {
+    font-size: 1.75rem;
   }
 }
 </style>
