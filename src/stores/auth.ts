@@ -102,10 +102,22 @@ export const useAuthStore = defineStore('auth', () => {
     confirm_password: string
   }) => {
     try {
+      console.log('🔄 Отправка данных смены пароля:', {
+        current_length: passwordData.current_password.length,
+        new_length: passwordData.new_password.length,
+        confirm_length: passwordData.confirm_password.length,
+      })
+
       const response = await apiClient.post('/users/change-password/', passwordData)
+
+      console.log('✅ Пароль успешно изменен:', response.data)
       return response.data
-    } catch (error) {
-      console.error('Password change error:', error)
+    } catch (error: any) {
+      console.error('❌ Password change error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      })
       throw error
     }
   }

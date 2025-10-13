@@ -10,39 +10,6 @@
         <div class="settings-section">
           <h2>Основная информация</h2>
           <div class="section-content">
-            <!-- Аватар -->
-            <div class="avatar-section">
-              <div class="avatar-preview">
-                <img 
-                  v-if="user?.avatar" 
-                  :src="user.avatar" 
-                  :alt="user.username"
-                  class="avatar-image"
-                />
-                <div v-else class="avatar-placeholder">
-                  {{ user?.first_name?.charAt(0) || user?.username?.charAt(0) || 'U' }}
-                </div>
-              </div>
-              <div class="avatar-controls">
-                <input 
-                  type="file" 
-                  ref="avatarInput"
-                  accept="image/*"
-                  @change="handleAvatarUpload"
-                  class="avatar-input"
-                />
-                <button @click="triggerAvatarUpload" class="avatar-btn">
-                  {{ user?.avatar ? 'Изменить' : 'Загрузить' }} фото
-                </button>
-                <button 
-                  v-if="user?.avatar" 
-                  @click="removeAvatar"
-                  class="avatar-remove-btn"
-                >
-                  Удалить
-                </button>
-              </div>
-            </div>
 
             <!-- Форма данных -->
             <form @submit.prevent="updateProfile" class="profile-form">
@@ -98,18 +65,8 @@
                     v-model="formData.phone"
                     type="tel"
                     class="form-input"
+                    placeholder="79123456789"
                   />
-                </div>
-
-                <div class="form-group full-width">
-                  <label for="bio">О себе</label>
-                  <textarea
-                    id="bio"
-                    v-model="formData.bio"
-                    rows="4"
-                    class="form-textarea"
-                    placeholder="Расскажите о себе..."
-                  ></textarea>
                 </div>
               </div>
 
@@ -189,12 +146,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import type { User, ProfileFormData } from '@/types/api'
+import type { ProfileFormData } from '@/types/api'
 
 const authStore = useAuthStore()
-const avatarInput = ref<HTMLInputElement>()
 
 // Данные формы
 const formData = reactive<ProfileFormData>({
@@ -218,19 +174,40 @@ const isChangingPassword = ref(false)
 const originalData = ref<ProfileFormData>({} as ProfileFormData)
 
 // Вычисляемые свойства
-const user = computed(() => authStore.user)
-
 const isFormChanged = computed(() => {
   return JSON.stringify(formData) !== JSON.stringify(originalData.value)
 })
 
 const isPasswordFormValid = computed(() => {
-  return passwordData.current_password && 
-         passwordData.new_password && 
-         passwordData.confirm_password &&
-         passwordData.new_password === passwordData.confirm_password &&
-         passwordData.new_password.length >= 6
-})
+  const hasAllFields = 
+    passwordData.current_password && 
+    passwordData.new_password && 
+    passwordData.confirm_password;
+  
+  const passwordsMatch = passwordData.new_password === passwordData.confirm_password;
+  const validLength = passwordData.new_password.length >= 3;
+
+  const isValid = hasAllFields && passwordsMatch && validLength;
+  
+  console.log('🔍 Детальная проверка пароля:', {
+    current_length: passwordData.current_password.length,
+    new_length: passwordData.new_password.length,
+    confirm_length: passwordData.confirm_password.length,
+    hasAllFields,
+    passwordsMatch, 
+    validLength,
+    isValid
+  });
+  
+  return isValid;
+});
+
+// Добавим watch для отладки
+watch(passwordData, (newVal) => {
+  console.log('🔄 Изменение данных пароля:', newVal)
+  console.log('✅ Валидность формы:', isPasswordFormValid.value)
+}, { deep: true })
+
 
 // Инициализация
 onMounted(() => {
@@ -253,32 +230,6 @@ const initializeForm = () => {
 }
 
 // Методы
-const triggerAvatarUpload = () => {
-  avatarInput.value?.click()
-}
-
-const handleAvatarUpload = async (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (target.files && target.files[0]) {
-    const file = target.files[0]
-    try {
-      await authStore.uploadAvatar(file)
-      if (avatarInput.value) {
-        avatarInput.value.value = ''
-      }
-    } catch (error) {
-      console.error('Ошибка при загрузке аватарки:', error)
-    }
-  }
-}
-
-const removeAvatar = async () => {
-  try {
-    await authStore.removeAvatar()
-  } catch (error) {
-    console.error('Ошибка при удалении аватарки:', error)
-  }
-}
 
 const updateProfile = async () => {
   isLoading.value = true
