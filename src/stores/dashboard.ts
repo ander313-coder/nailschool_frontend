@@ -14,6 +14,18 @@ export interface DashboardData {
     title: string
     lesson_title: string
   }>
+  passed_tests?: Array<{
+    // ДОБАВЛЯЕМ ЭТО ПОЛЕ
+    id: number
+    title: string
+    lesson_title: string
+  }>
+  tests_for_review?: Array<{
+    // ДОБАВЛЯЕМ ЭТО ПОЛЕ
+    id: number
+    title: string
+    lesson_title: string
+  }>
   completed_lessons_count: number
 }
 

@@ -103,14 +103,17 @@ export const instructorService = {
     return answers
   },
 
-  /**
-   * Проверить домашнее задание
-   */
+  // Проверить домашнее задание
   async reviewHomework(homeworkId: number, reviewData: HomeworkReviewData): Promise<Homework> {
-    console.log(`📝 Проверка ДЗ ${homeworkId}:`, reviewData)
-    const response = await apiClient.patch(`/instructor/homeworks/${homeworkId}/`, reviewData)
-    console.log('✅ ДЗ проверено:', response.data)
-    return response.data
+    try {
+      console.log('📝 Проверка ДЗ', homeworkId, ':', reviewData)
+      const response = await apiClient.patch(`/homework/${homeworkId}/review/`, reviewData)
+      console.log('✅ ДЗ проверено:', response.data)
+      return response.data
+    } catch (error) {
+      console.error(`❌ Error reviewing homework ${homeworkId}:`, error)
+      throw error
+    }
   },
 
   /**

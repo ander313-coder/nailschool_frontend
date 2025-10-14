@@ -37,21 +37,21 @@
 
       <!-- Сетка курсов -->
       <div class="courses-grid">
-        <div
-          v-for="course in filteredCourses"
-          :key="course.id"
+        <div 
+          v-for="course in filteredCourses" 
+          :key="course.id" 
           class="course-card"
-          @click="openCourse(course.id)"
         >
           <!-- Обложка курса -->
           <div class="course-cover">
             <img
-              v-if="course.cover_image"
-              :src="course.cover_image"
+              v-if="getCourseImage(course.cover_image)"
+              :src="getCourseImage(course.cover_image)"
               :alt="course.title"
               class="cover-image"
+              @error="(event) => handleImageError(event, course)"
             />
-            <div v-else class="cover-placeholder">
+            <div v-else class="cover-placeholder"> <!-- ИСПРАВЛЕНО: теперь есть v-if выше -->
               🎓
             </div>
             <div class="course-type-badge" :class="course.course_type.toLowerCase()">
@@ -86,7 +86,10 @@
 
           <!-- Футер карточки -->
           <div class="course-footer">
-            <button class="view-course-btn">
+            <button 
+              @click="openCourse(course.id)" 
+              class="view-course-btn"
+            >
               Смотреть курс →
             </button>
           </div>
@@ -101,7 +104,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCoursesStore } from '@/stores/courses'
 import { useAuthStore } from '@/stores/auth'
-
 
 const router = useRouter()
 const coursesStore = useCoursesStore()
@@ -124,16 +126,11 @@ const filteredCourses = computed(() => {
     
     switch (role) {
       case 'INSTRUCTOR':
-        // Инструктор видит все курсы
         return true
-        
       case 'MASTER':
-        // Мастер видит: ALL, BASIC, ADVANCED
         return courseAccess === 'ALL' || courseAccess === 'BASIC' || courseAccess === 'ADVANCED'
-        
       case 'TRAINEE':
       default:
-        // Стажер видит: ALL, BASIC
         return courseAccess === 'ALL' || courseAccess === 'BASIC'
     }
   })
@@ -145,12 +142,18 @@ const loadCourses = async () => {
     isLoading.value = true
     error.value = null
     
-    // Используем существующий метод из store
     await coursesStore.fetchUserCourses()
     
     console.log('👤 Роль пользователя:', userRole.value)
     console.log('📚 Всего курсов:', coursesList.value.length)
     console.log('🎯 Доступно курсов:', filteredCourses.value.length)
+    
+    // ДЕБАГ: Проверим данные картинок
+    console.log('🖼️ Данные картинок:', coursesList.value.map(course => ({
+      title: course.title,
+      cover_image: course.cover_image,
+      processed: getCourseImage(course.cover_image)
+    })))
     
   } catch (err: any) {
     error.value = err.message || 'Ошибка загрузки курсов'
@@ -160,10 +163,56 @@ const loadCourses = async () => {
   }
 }
 
-// Навигация
-const openCourse = (courseId: number) => {
-  router.push(`/courses/${courseId}`)
-}
+// Метод для обработки картинок - ИСПРАВЛЯЕМ ЛОГИКУ
+const getCourseImage = (coverImage: string | null | undefined): string | undefined => {
+  if (!coverImage) return undefined;
+  
+  console.log('🖼️ Обрабатываем картинку:', coverImage);
+  
+  // Если это уже полный URL, возвращаем как есть
+  if (coverImage.startsWith('http')) {
+    return coverImage;
+  }
+  
+  // Если путь начинается с courses/covers/ - это путь от media
+  if (coverImage.startsWith('courses/covers/')) {
+    const backendUrl = 'http://localhost:8000';
+    const imageUrl = `${backendUrl}/media/${coverImage}`; // ДОБАВЛЯЕМ /media/
+    console.log('🖼️ Media URL:', imageUrl);
+    return imageUrl;
+  }
+  
+  // Если это относительный путь с /, добавляем базовый URL бэкенда
+  if (coverImage.startsWith('/')) {
+    const backendUrl = 'http://localhost:8000';
+    const imageUrl = `${backendUrl}${coverImage}`;
+    console.log('🖼️ Абсолютный путь:', imageUrl);
+    return imageUrl;
+  }
+  
+  // Если путь без слеша, предполагаем что это media файл
+  const backendUrl = 'http://localhost:8000';
+  const imageUrl = `${backendUrl}/media/${coverImage}`; // ДОБАВЛЯЕМ /media/
+  console.log('🖼️ Предполагаем media:', imageUrl);
+  return imageUrl;
+};
+
+// Обработчик ошибок загрузки картинки
+const handleImageError = (event: Event, course: any) => {
+  const img = event.target as HTMLImageElement;
+  console.warn('❌ Ошибка загрузки картинки:', {
+    course: course.title,
+    attemptedUrl: img.src,
+    originalImage: course.cover_image
+  });
+  img.style.display = 'none';
+  
+  // Показываем placeholder
+  const placeholder = img.parentElement?.querySelector('.cover-placeholder') as HTMLElement;
+  if (placeholder) {
+    placeholder.style.display = 'flex';
+  }
+};
 
 // Вспомогательные функции
 const getCourseTypeText = (type: string): string => {
@@ -196,6 +245,11 @@ const getRoleDisplayText = (role: string): string => {
 const truncateText = (text: string, maxLength: number): string => {
   if (!text) return ''
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
+}
+
+// Навигация
+const openCourse = (courseId: number) => {
+  router.push(`/courses/${courseId}`)
 }
 
 // Инициализация

@@ -30,13 +30,24 @@
       </div>
     </div>
 
-    <!-- Карточка следующий тест -->
+    <!-- Карточка тестов -->
     <div class="stat-card">
       <div class="stat-icon">🧪</div>
       <div class="stat-content">
-        <h3>Следующий тест</h3>
-        <p class="stat-number">{{ upcomingTests }}</p>
-        <p class="stat-label">ожидает прохождения</p>
+        <h3>Тесты</h3>
+        <p class="stat-number">{{ totalTestsCount }}</p>
+        <div class="test-summary">
+          <span v-if="pendingTestsCount > 0" class="test-badge pending" title="Ожидают прохождения">
+            ⏳{{ pendingTestsCount }}
+          </span>
+          <span v-if="passedTestsCount > 0" class="test-badge passed" title="Успешно сданы">
+            ✅{{ passedTestsCount }}
+          </span>
+          <span v-if="needsReviewTestsCount > 0" class="test-badge review" title="На проверке инструктора">
+            📝{{ needsReviewTestsCount }}
+          </span>
+        </div>
+        <p class="stat-label">всего тестов</p>
       </div>
     </div>
   </div>
@@ -76,8 +87,21 @@ const averageProgress = computed(() => {
   return Math.round(totalProgress / dashboardData.value.active_courses.length);
 });
 
-const upcomingTests = computed(() => {
+// Детальная статистика по тестам - ДОБАВЛЯЕМ ЭТИ computed свойства
+const pendingTestsCount = computed(() => {
   return dashboardData.value?.pending_tests?.length || 0;
+});
+
+const passedTestsCount = computed(() => {
+  return dashboardData.value?.passed_tests?.length || 0;
+});
+
+const needsReviewTestsCount = computed(() => {
+  return dashboardData.value?.tests_for_review?.length || 0;
+});
+
+const totalTestsCount = computed(() => {
+  return pendingTestsCount.value + passedTestsCount.value + needsReviewTestsCount.value;
 });
 </script>
 
@@ -142,6 +166,35 @@ const upcomingTests = computed(() => {
   font-size: 0.8rem;
   color: #888;
   margin: 0;
+}
+
+.test-summary {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.test-badge {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.test-badge.pending {
+  background: #FFF5F5;
+  color: #C92A2A;
+}
+
+.test-badge.passed {
+  background: #F0FFF4;
+  color: #2B8A3E;
+}
+
+.test-badge.review {
+  background: #FFF9DB;
+  color: #E67700;
 }
 
 /* Адаптивность */
