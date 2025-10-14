@@ -43,6 +43,17 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
       const lessonsData = lessonsResponse.lessons || []
       lessons.value = lessonsData
 
+      // ДОБАВЛЯЕМ ОТЛАДОЧНЫЙ ВЫВОД
+      console.log(
+        '📊 Уроки загружены:',
+        lessonsData.map((l) => ({
+          id: l.id,
+          title: l.title,
+          completed: l.completed,
+          is_unlocked: l.is_unlocked,
+        })),
+      )
+
       // Вычисляем прогресс на основе новых данных
       updateProgress(lessonsData)
 
@@ -77,55 +88,49 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
     }
   }
 
-  // Отметить урок как завершенный
-  const markLessonCompleted = async (lessonId: number) => {
+  // ОСНОВНОЕ ИСПРАВЛЕНИЕ: Единый метод для обновления статуса урока
+  const updateLessonStatus = async (lessonId: number, completed: boolean) => {
     try {
-      await lessonService.completeLesson(lessonId)
-
-      // Обновляем локальное состояние БЕЗ перезагрузки
-      const lessonIndex = lessons.value.findIndex((l) => l.id === lessonId)
-      if (lessonIndex !== -1) {
-        lessons.value[lessonIndex].completed = true
+      // Отправляем запрос к API
+      if (completed) {
+        await lessonService.completeLesson(lessonId)
+      } else {
+        await lessonService.uncompleteLesson(lessonId)
       }
 
-      // Обновляем текущий урок если он активен
+      // ОБНОВЛЯЕМ ВСЕ СОСТОЯНИЯ СИНХРОННО:
+
+      // 1. Обновляем в списке уроков
+      const lessonIndex = lessons.value.findIndex((l) => l.id === lessonId)
+      if (lessonIndex !== -1) {
+        lessons.value[lessonIndex].completed = completed
+      }
+
+      // 2. Обновляем текущий урок если он активен
       if (currentLesson.value && currentLesson.value.id === lessonId) {
         currentLesson.value = {
           ...currentLesson.value,
-          is_completed: true,
+          is_completed: completed,
         }
       }
 
+      // 3. Пересчитываем прогресс курса
       updateProgress(lessons.value)
+
+      console.log(`✅ Статус урока ${lessonId} обновлен:`, completed ? 'завершен' : 'не завершен')
     } catch (err) {
-      console.error('Error marking lesson completed:', err)
+      console.error('❌ Error updating lesson status:', err)
       throw err
     }
   }
 
+  // Упрощенные методы для обратной совместимости
+  const markLessonCompleted = async (lessonId: number) => {
+    return updateLessonStatus(lessonId, true)
+  }
+
   const markLessonIncomplete = async (lessonId: number) => {
-    try {
-      await lessonService.uncompleteLesson(lessonId)
-
-      // Обновляем локальное состояние БЕЗ перезагрузки
-      const lessonIndex = lessons.value.findIndex((l) => l.id === lessonId)
-      if (lessonIndex !== -1) {
-        lessons.value[lessonIndex].completed = false
-      }
-
-      // Обновляем текущий урок если он активен
-      if (currentLesson.value && currentLesson.value.id === lessonId) {
-        currentLesson.value = {
-          ...currentLesson.value,
-          is_completed: false,
-        }
-      }
-
-      updateProgress(lessons.value)
-    } catch (err) {
-      console.error('Error marking lesson incomplete:', err)
-      throw err
-    }
+    return updateLessonStatus(lessonId, false)
   }
 
   // Вспомогательная функция для обновления прогресса
@@ -137,6 +142,24 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
       completed_lessons: completedLessons,
       total_lessons: totalLessons,
       progress_percent: totalLessons ? Math.round((completedLessons / totalLessons) * 100) : 0,
+    }
+
+    // ДОБАВЛЯЕМ ОТЛАДОЧНЫЙ ВЫВОД
+    console.log('🧮 Расчет прогресса:', {
+      completed: completedLessons,
+      total: totalLessons,
+      percent: progress.value.progress_percent + '%',
+      lessons: lessonsData.map((l) => ({ id: l.id, completed: l.completed })),
+    })
+  }
+
+  // Метод для полного обновления данных курса
+  const refreshCourseData = async (courseId: number) => {
+    try {
+      console.log('🔄 Полное обновление данных курса')
+      await fetchCourseDetail(courseId)
+    } catch (err) {
+      console.error('❌ Ошибка при обновлении данных курса:', err)
     }
   }
 
@@ -152,28 +175,7 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
     }
     error.value = null
   }
-  // Метод для принудительного обновления прогресса
-  const refreshCourseProgress = async (courseId: number) => {
-    try {
-      console.log('🔄 Принудительное обновление прогресса курса')
 
-      // Перезагружаем уроки курса чтобы получить актуальные данные
-      const lessonsResponse = await lessonService.getCourseLessons(courseId)
-      const lessonsData = lessonsResponse.lessons || []
-
-      // Обновляем уроки и прогресс
-      lessons.value = lessonsData
-      updateProgress(lessonsData)
-
-      console.log('✅ Прогресс курса обновлен:', {
-        lessons: lessonsData.length,
-        completed: progress.value.completed_lessons,
-        progress: progress.value.progress_percent + '%',
-      })
-    } catch (err: any) {
-      console.error('❌ Ошибка при обновлении прогресса курса:', err)
-    }
-  }
   return {
     course,
     lessons,
@@ -185,7 +187,8 @@ export const useCourseDetailStore = defineStore('courseDetail', () => {
     fetchLessonDetail,
     markLessonCompleted,
     markLessonIncomplete,
-    refreshCourseProgress,
+    updateLessonStatus,
+    refreshCourseData,
     reset,
   }
 })

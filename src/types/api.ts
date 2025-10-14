@@ -56,6 +56,7 @@ export interface Lesson {
   completed: boolean
   is_unlocked: boolean
   test_id?: number | null
+  video_url?: string | null
 }
 
 export interface LessonService {

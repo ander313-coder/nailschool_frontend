@@ -100,18 +100,23 @@
             <input 
               type="checkbox" 
               :checked="localCompleted" 
-              @change="toggleCompletion"
+              @change="handleCheckboxChange"
               class="checkbox-input"
               :disabled="isLoadingCompletion"
             />
             <span class="checkmark" :class="{ checked: localCompleted }"></span>
             <span class="checkbox-text">
-              {{ localCompleted ? 'Урок завершен' : 'Отметить как пройденный' }}
+              {{ localCompleted ? '✅ Урок завершен' : '☐ Отметить как пройденный' }}
             </span>
           </label>
           
           <div v-if="isLoadingCompletion" class="loading-indicator">
             Сохранение...
+          </div>
+          
+          <!-- Подсказка для пользователя -->
+          <div class="completion-hint" v-if="!localCompleted">
+            <small>💡 Урок будет автоматически отмечен при просмотре видео до конца</small>
           </div>
         </div>
         <HomeworkComponent v-if="showHomework" :lesson-id="lessonId"/>
@@ -215,7 +220,119 @@ const isLoading = computed(() => courseDetailStore.isLoading);
 const error = computed(() => courseDetailStore.error);
 const progress = computed(() => courseDetailStore.progress);
 
+// Локальное состояние для чекбокса
+const localCompleted = ref(false);
+const isLoadingCompletion = ref(false);
 
+// Загрузка данных урока 
+const loadLessonData = async () => {
+  try {
+    await Promise.all([
+      courseDetailStore.fetchLessonDetail(lessonId.value),
+      courseDetailStore.fetchCourseDetail(courseId.value)
+    ]);
+    
+    // Инициализируем состояние чекбокса после загрузки данных
+    if (lessonDetail.value) {
+      localCompleted.value = lessonDetail.value.is_completed === true;
+      console.log('🎯 Чекбокс инициализирован:', localCompleted.value);
+    }
+  } catch (error) {
+    console.error('Error loading lesson data:', error);
+  }
+  console.log('🔍 Проверка синхронизации:', {
+    localCompleted: localCompleted.value,
+    lessonCompleted: lessonDetail.value?.is_completed,
+    lessonsCount: lessons.value.length,
+    completedLessons: lessons.value.filter(l => l.completed).length
+  });
+};
+
+// Инициализация при загрузке компонента
+onMounted(() => {
+  loadLessonData();
+});
+
+// Следим за изменениями ID урока
+watch(lessonId, loadLessonData);
+
+// Обработчики видео
+const handleVideoEnd = async () => {
+  // Автоматически ставим галочку только если она еще не стоит
+  if (lessonDetail.value && !lessonDetail.value.is_completed) {
+    console.log('🎬 Видео завершено, автоматически отмечаем урок');
+    await toggleCompletion(true); // true = автоматическое завершение
+  }
+};
+
+const handleTimeUpdate = () => {
+  if (videoPlayer.value && videoPlayer.value.duration) {
+    const progress = (videoPlayer.value.currentTime / videoPlayer.value.duration) * 100;
+    // Автоматически отмечаем при 90% просмотра, только если галочка не стоит
+    if (progress > 90 && lessonDetail.value && !lessonDetail.value.is_completed) {
+      console.log('⏰ Просмотрено 90%, автоматически отмечаем урок');
+      courseDetailStore.updateLessonStatus(lessonId.value, true);
+      localCompleted.value = true;
+    }
+  }
+};
+
+// УНИВЕРСАЛЬНЫЙ МЕТОД ДЛЯ ПЕРЕКЛЮЧЕНИЯ СТАТУСА
+const toggleCompletion = async (isAutoComplete = false) => {
+  if (isLoadingCompletion.value) return;
+  
+  const newCompletedState = !localCompleted.value;
+  console.log('🔄 Переключение статуса урока:', {
+    текущий: localCompleted.value,
+    новый: newCompletedState,
+    авто: isAutoComplete
+  });
+  
+  isLoadingCompletion.value = true;
+
+  try {
+    // Мгновенно обновляем UI для лучшего UX
+    localCompleted.value = newCompletedState;
+    
+    // Используем единый метод для обновления статуса
+    await courseDetailStore.updateLessonStatus(lessonId.value, newCompletedState);
+    
+    console.log('✅ Статус урока успешно обновлен');
+    
+  } catch (error: any) {
+    // Откатываем изменения при ошибке
+    console.error('❌ Ошибка при изменении статуса:', error);
+    localCompleted.value = !newCompletedState;
+    
+    if (!isAutoComplete) {
+      alert('Не удалось сохранить статус урока. Попробуйте снова.');
+    }
+  } finally {
+    isLoadingCompletion.value = false;
+  }
+};
+
+// Обработчик клика по чекбоксу (только ручное переключение)
+const handleCheckboxChange = (event: Event) => {
+  console.log('✏️ Ручное переключение чекбокса');
+  toggleCompletion(false);
+};
+
+// Обработчик завершения теста - НЕ АВТОМАТИЧЕСКИ ОТМЕЧАЕМ УРОК
+const handleTestCompleted = (result: any) => {
+  console.log('📝 Тест завершен, результат:', result);
+  
+  // Тест НЕ должен автоматически отмечать урок как завершенный
+  // Пользователь должен сам поставить галочку
+  if (result.passed) {
+    console.log('🎉 Тест пройден, но урок не отмечаем автоматически');
+    // Можно показать сообщение, но не ставить галочку
+  }
+  
+  closeTestModal();
+};
+
+// Остальные методы
 const currentLessonIndex = computed(() => 
   lessons.value.findIndex(lesson => lesson.id === lessonId.value)
 );
@@ -234,44 +351,6 @@ const nextLessonId = computed(() =>
 const lesson = computed(() => 
   lessons.value.find(l => l.id === lessonId.value)
 );
-
-// Загрузка данных урока И списка уроков курса
-const loadLessonData = async () => {
-  try {
-    await Promise.all([
-      courseDetailStore.fetchLessonDetail(lessonId.value),
-      courseDetailStore.fetchCourseDetail(courseId.value)
-    ]);
-  } catch (error) {
-    console.error('Error loading lesson data:', error);
-  }
-};
-
-onMounted(() => {
-  loadLessonData();
-});
-
-watch(lessonId, loadLessonData);
-
-// Обработчики видео
-const handleVideoEnd = async () => {
-  if (lesson.value && !lesson.value.completed) {
-    await courseDetailStore.markLessonCompleted(lessonId.value);
-    // Обновляем прогресс курса
-    await courseDetailStore.refreshCourseProgress(courseId.value);
-  }
-};
-
-const handleTimeUpdate = () => {
-  if (videoPlayer.value) {
-    const progress = (videoPlayer.value.currentTime / videoPlayer.value.duration) * 100;
-    if (progress > 90 && lesson.value && !lesson.value.completed) {
-      courseDetailStore.markLessonCompleted(lessonId.value);
-      // Обновляем прогресс курса
-      courseDetailStore.refreshCourseProgress(courseId.value);
-    }
-  }
-};
 
 // Навигация
 const goToLesson = (lessonId: number) => {
@@ -294,12 +373,10 @@ const realTestId = computed(() => {
   const currentLesson = lessons.value.find(l => l.id === lessonId.value);
   return (currentLesson as any)?.test_id || null;
 });
-console.log('realTestId:', realTestId.value); 
 
 const showTestModal = ref(false);
 const currentTestId = ref<number | null>(null);
 
-// Тесты
 const goToTest = () => {
   if (realTestId.value) {
     currentTestId.value = realTestId.value;
@@ -314,11 +391,6 @@ const closeTestModal = () => {
   currentTestId.value = null;
 };
 
-const handleTestCompleted = (result: any) => {
-  console.log('Тест завершен:', result);
-  closeTestModal();
-};
-
 const goToCourse = () => {
   router.push(`/courses/${courseId.value}`);
 };
@@ -327,79 +399,9 @@ const retryLoading = () => {
   loadLessonData();
 };
 
-// Локальное состояние для чекбокса
-const localCompleted = ref(false);
-const isLoadingCompletion = ref(false);
-const isInitialized = ref(false);
-
-// Инициализация при загрузке компонента
-onMounted(() => {
-  initializeCompletionState();
-});
-
-// Следим за изменениями данных урока
-watch(lessonDetail, (newLesson) => {
-  if (newLesson) {
-    // Защита от undefined - используем false по умолчанию
-    localCompleted.value = newLesson.is_completed === true;
-    console.log('📥 Данные урока обновились, is_completed:', newLesson.is_completed, 'установлено:', localCompleted.value);
-  }
-}, { immediate: true });
-
-// Функция инициализации состояния
-const initializeCompletionState = () => {
-  if (lessonDetail.value) {
-    // Защита от undefined
-    localCompleted.value = lessonDetail.value.is_completed === true;
-    console.log('🎯 Инициализация чекбокса:', lessonDetail.value.is_completed, 'установлено:', localCompleted.value);
-    isInitialized.value = true;
-  }
-};
-
-// Переключение статуса завершения
-const toggleCompletion = async () => {
-  if (isLoadingCompletion.value) return;
-  
-  console.log('🔄 Начало переключения, текущее состояние:', localCompleted.value);
-  
-  isLoadingCompletion.value = true;
-  const previousState = localCompleted.value;
-  
-  try {
-    // Мгновенно меняем состояние для UX
-    localCompleted.value = !previousState;
-    console.log('🔄 Установлено новое состояние:', localCompleted.value);
-    
-    if (localCompleted.value) {
-      console.log('📤 Отмечаем как завершенный');
-      await courseDetailStore.markLessonCompleted(lessonId.value);
-    } else {
-      console.log('📤 Отмечаем как не завершенный');
-      await courseDetailStore.markLessonIncomplete(lessonId.value);
-    }
-    
-    // ВАЖНО: Обновляем прогресс курса после изменения статуса урока
-    await courseDetailStore.refreshCourseProgress(courseId.value);
-    
-    console.log('✅ Статус успешно обновлен');
-    
-  } catch (error: any) {
-    // При ошибке возвращаем предыдущее состояние
-    console.error('❌ Ошибка при изменении статуса:', error);
-    localCompleted.value = previousState;
-    
-    // Показываем уведомление об ошибке
-    alert('Не удалось сохранить статус урока. Попробуйте снова.');
-  } finally {
-    isLoadingCompletion.value = false;
-    console.log('🔚 Завершение переключения, финальное состояние:', localCompleted.value);
-  }
-};
-
 const showHomework = computed(() => {
   return lessonDetail.value?.has_homework || false;
 });
-
 </script>
 
 <style scoped>
