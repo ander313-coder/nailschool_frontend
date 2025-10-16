@@ -74,13 +74,16 @@
             @click="goToTest"
             class="nav-button test"
           >
-            Пройти тест →
+            Пройти тест
           </button>
           
+          <!-- заблокирована пока чекбокс не отмечен -->
           <button 
-            v-else-if="hasNextLesson" 
+            v-if="hasNextLesson" 
             @click="goToNextLesson"
             class="nav-button next"
+            :disabled="!canProceedToNextLesson"
+            :class="{ 'disabled': !canProceedToNextLesson }"
           >
             Следующий урок →
           </button>
@@ -89,6 +92,8 @@
             v-else 
             @click="goToCourse"
             class="nav-button course"
+            :disabled="!canProceedToNextLesson"
+            :class="{ 'disabled': !canProceedToNextLesson }"
           >
             Вернуться к курсу
           </button>
@@ -106,17 +111,12 @@
             />
             <span class="checkmark" :class="{ checked: localCompleted }"></span>
             <span class="checkbox-text">
-              {{ localCompleted ? '✅ Урок завершен' : '☐ Отметить как пройденный' }}
+              {{ localCompleted ? 'Урок завершен' : 'Отметить как пройденный' }}
             </span>
           </label>
           
           <div v-if="isLoadingCompletion" class="loading-indicator">
             Сохранение...
-          </div>
-          
-          <!-- Подсказка для пользователя -->
-          <div class="completion-hint" v-if="!localCompleted">
-            <small>💡 Урок будет автоматически отмечен при просмотре видео до конца</small>
           </div>
         </div>
         <HomeworkComponent v-if="showHomework" :lesson-id="lessonId"/>
@@ -133,7 +133,7 @@
           </div>
         </div>
 
-        <!-- Список уроков -->
+        <!-- ОБНОВЛЕННЫЙ список уроков -->
         <div class="lessons-list">
           <div 
             v-for="lessonItem in lessons" 
@@ -142,7 +142,7 @@
             :class="{
               'current': lessonItem.id === lessonId,
               'completed': lessonItem.completed,
-              'locked': !lessonItem.is_unlocked && lessonItem.id !== lessonId
+              'locked': !isLessonAccessible(lessonItem)
             }"
             @click="goToLesson(lessonItem.id)"
           >
@@ -158,6 +158,10 @@
                 <span class="duration">{{ lessonItem.duration_minutes }} мин</span>
                 <span v-if="lessonItem.has_test" class="test-badge">📝 Тест</span>
                 <span v-if="lessonItem.has_homework" class="homework-badge">ДЗ</span>
+                <!-- Показываем подсказку для заблокированных уроков -->
+                <span v-if="!isLessonAccessible(lessonItem) && lessonItem.id !== lessonId" class="locked-hint">
+                  🔒 Завершите текущий урок
+                </span>
               </div>
             </div>
           </div>
@@ -353,8 +357,43 @@ const lesson = computed(() =>
 );
 
 // Навигация
-const goToLesson = (lessonId: number) => {
-  router.push(`/courses/${courseId.value}/lesson/${lessonId}`);
+// Проверка доступности урока для перехода
+const isLessonAccessible = (lessonItem: any) => {
+  // Текущий урок всегда доступен
+  if (lessonItem.id === lessonId.value) {
+    return true;
+  }
+  // Завершенные уроки доступны
+  if (lessonItem.completed) {
+    return true;
+  }
+  
+  // Находим индекс текущего и целевого урока
+  const currentIndex = lessons.value.findIndex(l => l.id === lessonId.value);
+  const targetIndex = lessons.value.findIndex(l => l.id === lessonItem.id);
+  
+  // Если целевой урок раньше текущего - доступен
+  if (targetIndex < currentIndex) {
+    return true;
+  }
+  
+  // Если целевой урок следующий после текущего - доступен только если текущий завершен
+  if (targetIndex === currentIndex + 1) {
+    return localCompleted.value === true;
+  }
+  
+  // Все остальные уроки недоступны
+  return false;
+};
+
+const goToLesson = (lessonItemId: number) => {
+  const lessonItem = lessons.value.find(l => l.id === lessonItemId);
+  if (!lessonItem || !isLessonAccessible(lessonItem)) {
+    console.log('🚫 Урок заблокирован:', lessonItemId);
+    return; // Не переходим если урок недоступен
+  }
+  console.log('✅ Переход к уроку:', lessonItemId);
+  router.push(`/courses/${courseId.value}/lesson/${lessonItemId}`);
 };
 
 const goToPreviousLesson = () => {
@@ -376,6 +415,11 @@ const realTestId = computed(() => {
 
 const showTestModal = ref(false);
 const currentTestId = ref<number | null>(null);
+
+// проверка доступности следующего урока
+const canProceedToNextLesson = computed(() => {
+  return localCompleted.value === true;
+});
 
 const goToTest = () => {
   if (realTestId.value) {
@@ -601,9 +645,35 @@ const showHomework = computed(() => {
   border-color: #e6f3ff;
 }
 
+/* Подсказка для заблокированных уроков */
+.locked-hint {
+  font-size: 0.7rem;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+}
+
 .lesson-item.locked {
   opacity: 0.6;
   cursor: not-allowed;
+  background: #f8f9fa !important;
+  border-color: #e9ecef !important;
+}
+
+.lesson-item.locked:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: #f8f9fa !important;
+}
+
+.lesson-item.locked .lesson-title {
+  color: #666;
+}
+
+.lesson-item.locked .lesson-meta {
+  color: #999;
 }
 
 /* Иконки и статусы */
@@ -715,6 +785,21 @@ const showHomework = computed(() => {
 .nav-button:hover {
   opacity: 0.9;
   transform: translateY(-1px);
+}
+
+/* Стили для заблокированных кнопок */
+.nav-button:disabled,
+.nav-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.nav-button:disabled:hover,
+.nav-button.disabled:hover {
+  opacity: 0.5;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* Стили для модального окна */
