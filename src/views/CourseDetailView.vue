@@ -100,8 +100,8 @@
             class="lesson-item"
             :class="{
               'completed': lesson.completed,
-              'current': !lesson.completed && lesson.is_unlocked,
-              'locked': !lesson.is_unlocked
+              'current': !lesson.completed && isLessonAccessible(lesson),
+              'locked': !isLessonAccessible(lesson)
             }"
           >
             <div class="lesson-info">
@@ -119,7 +119,7 @@
               </span>
               
               <router-link 
-                v-if="lesson.is_unlocked || lesson.completed || isFirstLesson(lesson)"
+                v-if="isLessonAccessible(lesson)"
                 :to="`/courses/${courseId}/lesson/${lesson.id}`"
                 class="lesson-button"
               >
@@ -260,6 +260,36 @@ const continueLearning = () => {
   if (lesson?.id && courseId.value) {
     router.push(`/courses/${courseId.value}/lesson/${lesson.id}`);
   }
+};
+
+// Проверка доступности урока
+const isLessonAccessible = (lessonItem: any) => {
+  // Первый урок всегда доступен
+  if (isFirstLesson(lessonItem)) {
+    return true;
+  }
+  // Завершенные уроки доступны
+  if (lessonItem.completed) {
+    return true;
+  }
+  
+  // Находим индекс текущего и целевого урока
+  const sorted = sortedLessons.value;
+  const currentIndex = sorted.findIndex(l => !l.completed);
+  const targetIndex = sorted.findIndex(l => l.id === lessonItem.id);
+  
+  // Если целевой урок раньше текущего незавершенного - доступен
+  if (targetIndex < currentIndex) {
+    return true;
+  }
+  
+  // Если целевой урок следующий после последнего завершенного - доступен
+  if (targetIndex === currentIndex) {
+    return true;
+  }
+  
+  // Все остальные уроки недоступны
+  return false;
 };
 </script>
 
@@ -556,6 +586,7 @@ const continueLearning = () => {
   box-shadow: var(--shadow-sm);
   border-left: 4px solid var(--primary);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  opacity: 1; /* Явно указываем нормальную прозрачность */
 }
 
 .lesson-item:hover {
@@ -563,79 +594,40 @@ const continueLearning = () => {
   box-shadow: var(--shadow-md);
 }
 
+/* Завершенные уроки */
 .lesson-item.completed {
-  border-left-color: #2e7d32;
+  border-left-color: blue;
   background: #f8f9fa;
 }
 
-.lesson-item.locked {
-  border-left-color: var(--gray-400);
+/* Текущий доступный урок */
+.lesson-item.current {
+  border-left-color: gray;
+  background: white;
+}
+
+/* Заблокированные уроки (только те, которые не завершены и не текущие) */
+.lesson-item.locked:not(.completed):not(.current) {
+  opacity: 0.6;
   background: var(--gray-50);
-  opacity: 0.7;
+  border-left-color: gray;
+  cursor: not-allowed;
 }
 
-.lesson-info {
-  flex: 1;
+.lesson-item.locked:not(.completed):not(.current):hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
 }
 
-.lesson-number {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-}
-
-.lesson-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: var(--text-primary);
-}
-
-.lesson-description {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-  line-height: 1.4;
-}
-
-.lesson-meta {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.8rem;
+.lesson-item.locked:not(.completed):not(.current) .lesson-title {
   color: var(--text-secondary);
 }
 
+/* Кнопки действий */
 .lesson-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
-}
-
-.lesson-status {
-  font-size: 0.8rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-weight: 500;
-}
-
-.lesson-status.completed {
-  background: #e8f5e8;
-  color: #2e7d32;
-}
-
-.lesson-status.locked {
-  background: var(--gray-200);
-  color: var(--text-secondary);
-}
-
-.lesson-status.test {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.lesson-status.pending {
-  background: #fff3cd;
-  color: #856404;
 }
 
 .lesson-button {
@@ -663,6 +655,24 @@ const continueLearning = () => {
 
 .lesson-button.review:hover {
   background: var(--gray-300);
+}
+
+/* Заблокированная кнопка */
+.lesson-button.locked {
+  background: var(--gray-300) !important;
+  color: var(--text-secondary) !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Подсказка для заблокированных уроков */
+.locked-hint {
+  font-size: 0.7rem;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 0.5rem;
 }
 
 /* Действия с курсом */
