@@ -105,7 +105,6 @@
             }"
           >
             <div class="lesson-info">
-              <div class="lesson-number">Урок {{ lesson.order }}</div>
               <h3 class="lesson-title">{{ lesson.title }}</h3>
               <div class="lesson-meta">
                 <span class="lesson-duration">{{ lesson.duration_minutes }} минут</span>

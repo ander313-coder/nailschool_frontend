@@ -5,8 +5,8 @@ export const homeworkService = {
   // Получить ДЗ для урока
   async getHomeworkForLesson(lessonId: number): Promise<Homework | null> {
     try {
-      const response = await apiClient.get(`/homework/?lesson=${lessonId}`)
-      return response.data.results?.[0] || null
+      const response = await apiClient.get(`/homework/lesson/${lessonId}/`)
+      return response.data || null
     } catch (error) {
       console.error(`Error fetching homework for lesson ${lessonId}:`, error)
       return null
@@ -24,12 +24,14 @@ export const homeworkService = {
       formData.append(`files`, file)
     })
 
+    console.log('📤 Отправка ДЗ с файлами:', submission.files.length)
+
     const response = await apiClient.post('/homework/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     })
-
+    console.log('✅ Ответ от сервера:', response.data)
     return response.data
   },
 
@@ -53,16 +55,8 @@ export const homeworkService = {
   // Создать или обновить ДЗ
   async createOrUpdateHomework(submission: HomeworkSubmission): Promise<Homework> {
     try {
-      // Сначала проверяем есть ли существующее ДЗ
-      const existingHomework = await this.getHomeworkForLesson(submission.lesson_id)
-
-      if (existingHomework) {
-        // Обновляем существующее ДЗ - добавляем файлы
-        return await this.addFilesToHomework(existingHomework.id, submission.files)
-      } else {
-        // Создаем новое ДЗ
-        return await this.submitHomework(submission)
-      }
+      // ВСЕГДА СОЗДАЕМ НОВОЕ ДЗ (не проверяем существование)
+      return await this.submitHomework(submission)
     } catch (error) {
       console.error('Error in createOrUpdateHomework:', error)
       throw error

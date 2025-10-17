@@ -79,13 +79,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/settings',
-      name: 'settings',
-      component: () => import('@/views/dashboard/SettingsView.vue'),
-      meta: { requiresAuth: true },
-    },
-
-    {
       path: '/contacts',
       name: 'contacts',
       component: () => import('@/views/ContactsView.vue'),
@@ -123,6 +116,12 @@ const router = createRouter({
       name: 'instructor-text-answers',
       component: () => import('@/views/instructor/TextAnswersView.vue'),
       meta: { requiresAuth: true, requiresInstructor: true },
+    },
+    {
+      path: '/homeworks',
+      name: 'homeworks',
+      component: () => import('@/views/HomeworkListView.vue'),
+      meta: { requiresAuth: true },
     },
   ],
   scrollBehavior() {

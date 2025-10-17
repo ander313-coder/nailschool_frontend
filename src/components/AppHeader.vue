@@ -20,7 +20,7 @@
           <router-link to="/courses" class="nav-link">Все курсы</router-link>
           <router-link to="/about" class="nav-link">О школе</router-link>
         </nav>
-
+        <NotificationBell />
         <!-- Правая часть - Авторизация -->
         <div class="auth-section">
           <template v-if="authStore.isAuthenticated">
@@ -92,7 +92,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
 import { computed, ref, onUnmounted, onMounted } from 'vue'
-
+import NotificationBell from '@/components/notifications/NotificationBell.vue';
 const authStore = useAuthStore()
 const isUserDropdownOpen = ref(false)
 

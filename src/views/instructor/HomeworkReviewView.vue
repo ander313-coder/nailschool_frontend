@@ -5,14 +5,6 @@
       <button @click="$router.back()" class="back-button">← Назад</button>
       <h1>Проверка ДЗ</h1>
     </div>
-        <!-- Временно покажем полную структуру ДЗ -->
-    <div v-if="true" class="debug-homework" style="background: #fff3cd; padding: 15px; margin: 10px 0; border-radius: 6px;">
-      <h4>🔍 ДЕБАГ СТРУКТУРА ДЗ:</h4>
-      <div v-for="hw in instructorStore.allHomeworks.slice(0, 2)" :key="hw.id">
-        <strong>ДЗ ID: {{ hw.id }}</strong>
-        <pre style="font-size: 12px; background: white; padding: 8px; border-radius: 4px; overflow: auto;">{{ JSON.stringify(hw, null, 2) }}</pre>
-      </div>
-    </div>
     <!-- Состояния -->
     <div v-if="isLoading" class="state-message">
       <div class="spinner"></div>
@@ -112,11 +104,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useInstructorStore } from '../../stores/instructorStore'
+import { useHomeworkStore } from '../../stores/homeworkStore'
 import type { Homework, HomeworkReviewData } from '../../types/api'
 
 const route = useRoute()
 const router = useRouter()
 const instructorStore = useInstructorStore()
+const homeworkStore = useHomeworkStore()
 
 // Состояния
 const isLoading = ref(true)
@@ -146,12 +140,9 @@ const getUserName = (hw: Homework): string => {
 }
 
 const getLessonTitle = (hw: Homework): string => {
-  // Используем прямое поле lesson_title если оно есть
   if (hw.lesson_title) {
     return hw.lesson_title
   }
-  
-  // Если lesson_title нет, но lesson есть (ID)
   if (hw.lesson) {
     if (typeof hw.lesson === 'object' && hw.lesson.title) {
       return hw.lesson.title
@@ -160,44 +151,58 @@ const getLessonTitle = (hw: Homework): string => {
       return `Урок ${hw.lesson}`
     }
   }
-  
   return 'Без названия'
 }
 
 const getCourseTitle = (hw: Homework): string => {
-  // Используем прямое поле course_title если оно есть
   if (hw.course_title) {
     return hw.course_title
   }
-  
-  // Если course_title нет, но есть вложенный курс
   if (hw.lesson && typeof hw.lesson === 'object' && hw.lesson.course) {
     return hw.lesson.course.title || 'Без курса'
   }
-  
   return 'Без курса'
 }
 
-// Загрузка данных
+// ИСПРАВЛЕННАЯ ЗАГРУЗКА ДАННЫХ - ИЩЕМ ФАЙЛЫ В СУЩЕСТВУЮЩЕМ СПИСКЕ
 const loadHomework = async () => {
   try {
     isLoading.value = true
     error.value = null
     
-    await instructorStore.loadAllHomeworks()
-    const foundHomework = instructorStore.allHomeworks.find(hw => hw.id === homeworkId.value)
+    // СНАЧАЛА ИЩЕМ В СУЩЕСТВУЮЩЕМ СПИСКЕ ДЗ (где есть файлы)
+    let homeworkWithFiles = instructorStore.allHomeworks.find(hw => hw.id === homeworkId.value)
     
-    if (foundHomework) {
-      homework.value = foundHomework
-      reviewData.value.instructor_comment = foundHomework.instructor_comment || ''
-      if (foundHomework.status !== 'PENDING') {
-        reviewData.value.status = foundHomework.status as 'APPROVED' | 'REJECTED'
-      }
+    if (homeworkWithFiles) {
+      console.log('✅ Нашли ДЗ в списке с файлами:', homeworkWithFiles.files)
+      homework.value = homeworkWithFiles
     } else {
-      error.value = `ДЗ с ID ${homeworkId.value} не найдено`
+      // ЕСЛИ НЕ НАШЛИ - ЗАГРУЖАЕМ ЧЕРЕЗ API
+      console.log('🔍 ДЗ не найдено в списке, загружаем через API...')
+      const homeworkData = await homeworkStore.fetchHomeworkById(homeworkId.value)
+      
+      if (homeworkData) {
+        homework.value = homeworkData
+        console.log('📁 Данные из API:', homeworkData)
+      } else {
+        error.value = `ДЗ с ID ${homeworkId.value} не найдено`
+        return
+      }
     }
+    
+    // ЗАПОЛНЯЕМ ФОРМУ
+    if (homework.value) {
+      reviewData.value.instructor_comment = homework.value.instructor_comment || ''
+      if (homework.value.status !== 'PENDING') {
+        reviewData.value.status = homework.value.status as 'APPROVED' | 'REJECTED'
+      }
+      
+      console.log('📁 Финальные файлы:', homework.value.files)
+    }
+    
   } catch (err: any) {
-    error.value = err.message || 'Ошибка загрузки'
+    error.value = err.message || 'Ошибка загрузки ДЗ'
+    console.error('Ошибка загрузки ДЗ:', err)
   } finally {
     isLoading.value = false
   }
@@ -233,7 +238,13 @@ const getStatusDisplay = (status: string) => {
 }
 
 const getFileName = (filePath: string) => {
-  return filePath.split('/').pop() || 'Файл'
+  // ДЕКОДИРУЕМ URL-encoded имена файлов
+  try {
+    const decoded = decodeURIComponent(filePath.split('/').pop() || 'Файл')
+    return decoded
+  } catch {
+    return filePath.split('/').pop() || 'Файл'
+  }
 }
 
 const openFile = (filePath: string) => {

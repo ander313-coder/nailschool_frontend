@@ -348,15 +348,14 @@ const formatDate = (dateString: string): string => {
   })
 }
 
-const getFileName = (filePath: string): string => {
-  console.log('📎 File path:', filePath)
-  
-  if (!filePath) return 'Файл'
-  
-  // Обрабатываем разные форматы путей
-  const fileName = filePath.split('/').pop() || 'Файл'
-  console.log('📎 Extracted file name:', fileName)
-  return fileName
+const getFileName = (filePath: string) => {
+  // ДЕКОДИРУЕМ URL-encoded имена файлов
+  try {
+    const decoded = decodeURIComponent(filePath.split('/').pop() || 'Файл')
+    return decoded
+  } catch {
+    return filePath.split('/').pop() || 'Файл'
+  }
 }
 
 // Функция для получения полного URL файла
@@ -375,37 +374,6 @@ const getFileUrl = (filePath: string): string => {
   const cleanPath = filePath.startsWith('/') ? filePath : `/${filePath}`
   
   return `${baseUrl}${cleanPath}`
-}
-
-const testFileAccess = async (file: any) => {
-  console.log('🧪 Тестируем доступ к файлу:', file)
-  
-  try {
-    // Пробуем разные варианты URL
-    const possibleUrls = [
-      file.file,
-      file.url,
-      `/media/${file.file}`,
-      `http://localhost:8000${file.file}`,
-      `http://localhost:8000/media/${file.file}`
-    ]
-    
-    for (const url of possibleUrls) {
-      if (!url) continue
-      
-      console.log(`🔗 Пробуем URL: ${url}`)
-      const response = await fetch(url, { method: 'HEAD' })
-      if (response.ok) {
-        console.log(`✅ Файл доступен по URL: ${url}`)
-        window.open(url, '_blank')
-        return
-      }
-    }
-    
-    console.log('❌ Ни один URL не сработал')
-  } catch (error) {
-    console.error('❌ Ошибка доступа к файлу:', error)
-  }
 }
 
 // Загрузка данных при монтировании
