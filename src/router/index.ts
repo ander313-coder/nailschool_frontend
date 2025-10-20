@@ -123,6 +123,12 @@ const router = createRouter({
       component: () => import('@/views/HomeworkListView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/homeworks/:id',
+      name: 'homework-detail',
+      component: () => import('@/views/HomeworkDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
   scrollBehavior() {
     return { top: 0, behavior: 'smooth' }

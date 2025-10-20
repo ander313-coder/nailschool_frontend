@@ -1,127 +1,183 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useHomeworkStore } from '@/stores/homeworkStore'
+import apiClient from '@/api/client'
 import type { Homework } from '@/types/api'
 
 export interface Notification {
   id: number
-  type: 'homework_status'
+  type: 'HOMEWORK_SUBMITTED' | 'HOMEWORK_STATUS_CHANGED' | string
   title: string
   message: string
-  homeworkId: number
+  homework_id: number | null
+  lesson_title: string
   read: boolean
-  createdAt: Date
+  created_at: string
 }
 
 export const useNotificationStore = defineStore('notification', () => {
   const notifications = ref<Notification[]>([])
-  const homeworkStore = useHomeworkStore()
+  const isLoading = ref(false)
+  const lastCheck = ref<Date | null>(null)
 
-  // Следующие ID для новых уведомлений
-  let nextId = 1
-
-  // Непрочитанные уведомления (computed)
+  // Непрочитанные уведомления
   const unreadNotifications = computed(() =>
     notifications.value.filter((notification) => !notification.read),
   )
 
-  // Непрочитанные уведомления о ДЗ
-  const unreadHomeworkNotifications = computed(() =>
-    unreadNotifications.value.filter((n) => n.type === 'homework_status'),
+  // Количество непрочитанных
+  const unreadCount = computed(() => unreadNotifications.value.length)
+
+  // Уведомления о домашних работах
+  const homeworkNotifications = computed(() =>
+    notifications.value.filter((n) => n.homework_id !== null),
   )
 
-  // Добавить уведомление
-  const addNotification = (notification: Omit<Notification, 'id' | 'read' | 'createdAt'>) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: nextId++,
-      read: false,
-      createdAt: new Date(),
-    }
+  // Загрузить уведомления с сервера
+  const fetchNotifications = async (force = false) => {
+    // Если уже загружаем, не делаем повторный запрос
+    if (isLoading.value && !force) return
 
-    notifications.value.unshift(newNotification) // Добавляем в начало
+    isLoading.value = true
+    try {
+      console.log('🔔 Загрузка уведомлений с сервера...')
+      // ИСПРАВЛЕНО: убрали дублирование /api/
+      const response = await apiClient.get('/notifications/')
 
-    // Ограничиваем историю уведомлений (последние 50)
-    if (notifications.value.length > 50) {
-      notifications.value = notifications.value.slice(0, 50)
+      notifications.value = response.data.notifications
+      lastCheck.value = new Date()
+
+      console.log(`✅ Загружено ${notifications.value.length} уведомлений`)
+      return notifications.value
+    } catch (error: any) {
+      console.error('❌ Ошибка загрузки уведомлений:', error)
+      console.error('❌ Ответ сервера:', error.response?.data)
+      throw error
+    } finally {
+      isLoading.value = false
     }
   }
 
   // Отметить как прочитанное
-  const markAsRead = (notificationId: number) => {
-    const notification = notifications.value.find((n) => n.id === notificationId)
-    if (notification) {
-      notification.read = true
+  const markAsRead = async (notificationId: number) => {
+    try {
+      // ИСПРАВЛЕНО: убрали дублирование /api/
+      await apiClient.post('/notifications/', { notification_id: notificationId })
+
+      // Обновляем локально
+      const notification = notifications.value.find((n) => n.id === notificationId)
+      if (notification) {
+        notification.read = true
+      }
+
+      console.log(`✅ Уведомление ${notificationId} отмечено как прочитанное`)
+    } catch (error: any) {
+      console.error('❌ Ошибка отметки уведомления как прочитанного:', error)
+      console.error('❌ Ответ сервера:', error.response?.data)
+      throw error
     }
   }
 
   // Отметить все как прочитанные
-  const markAllAsRead = () => {
-    notifications.value.forEach((notification) => {
-      notification.read = true
-    })
-  }
-
-  // Удалить уведомление
-  const removeNotification = (notificationId: number) => {
-    notifications.value = notifications.value.filter((n) => n.id !== notificationId)
-  }
-
-  // Очистить все уведомления
-  const clearAll = () => {
-    notifications.value = []
-  }
-
-  // Проверить изменения статусов домашних работ
-  const checkHomeworkStatusChanges = async (): Promise<Homework[]> => {
+  const markAllAsRead = async () => {
     try {
-      const changedHomeworks = await homeworkStore.checkStatusChanges()
+      const unreadIds = unreadNotifications.value.map((n) => n.id)
 
-      changedHomeworks.forEach((homework) => {
-        const statusText = getStatusText(homework.status)
+      // Отмечаем каждое уведомление на сервере
+      for (const id of unreadIds) {
+        await markAsRead(id)
+      }
 
-        addNotification({
-          type: 'homework_status',
-          title: 'Статус домашней работы изменен',
-          message: `Домашняя работа "${getHomeworkLessonTitle(homework)}" ${statusText.toLowerCase()}`,
-          homeworkId: homework.id,
-        })
-      })
-
-      return changedHomeworks
+      console.log(`✅ Все уведомления (${unreadIds.length}) отмечены как прочитанные`)
     } catch (error) {
-      console.error('Error checking homework status changes:', error)
-      return []
+      console.error('❌ Ошибка отметки всех уведомлений:', error)
+      throw error
     }
   }
 
-  // Вспомогательные функции
-  const getStatusText = (status: string): string => {
-    const statusMap: { [key: string]: string } = {
-      PENDING: 'на проверке',
-      APPROVED: 'принята',
-      REJECTED: 'отправлена на доработку',
+  // Удалить все прочитанные уведомления
+  const clearReadNotifications = async () => {
+    try {
+      // ИСПРАВЛЕНО: убрали дублирование /api/
+      await apiClient.delete('/notifications/')
+
+      // Удаляем локально только прочитанные
+      notifications.value = notifications.value.filter((n) => !n.read)
+
+      console.log('✅ Прочитанные уведомления очищены')
+    } catch (error: any) {
+      console.error('❌ Ошибка очистки уведомлений:', error)
+      console.error('❌ Ответ сервера:', error.response?.data)
+      throw error
     }
-    return statusMap[status] || status
   }
 
-  const getHomeworkLessonTitle = (homework: Homework): string => {
-    if (typeof homework.lesson === 'object' && homework.lesson !== null) {
-      return homework.lesson.title || 'Без названия'
+  // Очистить все уведомления (только локально)
+  const clearAllLocal = () => {
+    notifications.value = []
+    console.log('🗑️ Все уведомления очищены локально')
+  }
+
+  // Проверить новые уведомления (для периодической проверки)
+  const checkForNewNotifications = async (): Promise<boolean> => {
+    try {
+      console.log('🔄 Проверка новых уведомлений...')
+
+      const oldCount = unreadCount.value
+      await fetchNotifications(true)
+      const newCount = unreadCount.value
+
+      const hasNew = newCount > oldCount
+      if (hasNew) {
+        console.log(`🎉 Обнаружено ${newCount - oldCount} новых уведомлений`)
+      }
+
+      return hasNew
+    } catch (error) {
+      console.warn('⚠️ Ошибка при проверке новых уведомлений:', error)
+      return false
     }
-    return 'Без названия'
+  }
+
+  // Получить уведомления по домашней работе
+  const getHomeworkNotifications = (homeworkId: number) => {
+    return notifications.value.filter((n) => n.homework_id === homeworkId)
+  }
+
+  // Добавить уведомление локально (для real-time, если будете делать WebSockets)
+  const addNotificationLocal = (notification: Notification) => {
+    // Проверяем нет ли уже такого уведомления
+    const exists = notifications.value.some((n) => n.id === notification.id)
+    if (!exists) {
+      notifications.value.unshift(notification)
+
+      // Ограничиваем историю
+      if (notifications.value.length > 50) {
+        notifications.value = notifications.value.slice(0, 50)
+      }
+
+      console.log('📨 Добавлено новое уведомление локально')
+    }
   }
 
   return {
+    // State
     notifications,
-    unreadNotifications,
-    unreadHomeworkNotifications,
+    isLoading,
+    lastCheck,
 
-    addNotification,
+    // Getters
+    unreadNotifications,
+    unreadCount,
+    homeworkNotifications,
+
+    // Actions
+    fetchNotifications,
     markAsRead,
     markAllAsRead,
-    removeNotification,
-    clearAll,
-    checkHomeworkStatusChanges,
+    clearReadNotifications,
+    clearAllLocal,
+    checkForNewNotifications,
+    getHomeworkNotifications,
+    addNotificationLocal,
   }
 })

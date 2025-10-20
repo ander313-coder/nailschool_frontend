@@ -96,7 +96,6 @@ export const useHomeworkStore = defineStore('homework', () => {
   }
 
   // Получить домашнюю работу по ID (для обновления статуса)
-  // В homeworkStore.ts - убедимся что метод возвращает полные данные
   const fetchHomeworkById = async (homeworkId: number) => {
     isLoading.value = true
     error.value = null
@@ -118,8 +117,19 @@ export const useHomeworkStore = defineStore('homework', () => {
   // Проверить изменения статуса (для уведомлений)
   const checkStatusChanges = async (): Promise<Homework[]> => {
     try {
-      const currentHomeworks = homeworkList.value
-      const updatedHomeworks = await fetchUserHomeworks()
+      console.log('🔄 Проверка изменений статусов...')
+
+      // Сохраняем текущий список ДЗ
+      const currentHomeworks = [...homeworkList.value]
+
+      // Пытаемся загрузить обновленный список
+      let updatedHomeworks: Homework[] = []
+      try {
+        updatedHomeworks = await fetchUserHomeworks()
+      } catch (error) {
+        console.warn('⚠️ Не удалось загрузить ДЗ для проверки изменений:', error)
+        return []
+      }
 
       // Находим домашние работы с измененным статусом
       const changedHomeworks = updatedHomeworks.filter((updated) => {
@@ -127,9 +137,10 @@ export const useHomeworkStore = defineStore('homework', () => {
         return current && current.status !== updated.status
       })
 
+      console.log('🔄 Найдено измененных ДЗ:', changedHomeworks.length)
       return changedHomeworks
     } catch (err) {
-      console.error('Error checking status changes:', err)
+      console.error('❌ Ошибка при проверке изменений статусов:', err)
       return []
     }
   }

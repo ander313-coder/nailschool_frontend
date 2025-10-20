@@ -100,6 +100,7 @@
         <!-- Информация об обновлении статуса -->
         <div v-if="homework.updated_at !== homework.created_at" class="status-update">
           <small>Статус обновлен: {{ formatDate(homework.updated_at) }}</small>
+          <router-link :to="`/homeworks/${homework.id}`" class="view-link">Подробнее</router-link>
         </div>
       </div>
     </div>
@@ -156,7 +157,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Стили остаются без изменений */
 .homework-list-view {
   max-width: 800px;
   margin: 0 auto;
@@ -194,7 +194,7 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.refresh-btn, .retry-btn {
+.refresh-btn, .retry-btn, .view-link {
   padding: 8px 16px;
   background-color: #8C4CC3;
   color: white;
@@ -286,6 +286,8 @@ onMounted(() => {
 }
 
 .status-update {
+  display: flex;
+  justify-content: space-between;
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid #f0f0f0;
