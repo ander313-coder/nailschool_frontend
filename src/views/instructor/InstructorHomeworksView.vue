@@ -227,8 +227,8 @@ const filteredHomeworks = computed(() => {
 
   // Сортировка
   filtered.sort((a, b) => {
-    const dateA = new Date(a.created_at).getTime()
-    const dateB = new Date(b.created_at).getTime()
+    const dateA = new Date(a.updated_at).getTime()
+    const dateB = new Date(b.updated_at).getTime()
     return sortBy.value === 'newest' ? dateB - dateA : dateA - dateB
   })
 

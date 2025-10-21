@@ -78,7 +78,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useHomeworkStore } from '@/stores/homeworkStore'
 import type { Homework, HomeworkSubmission } from '@/types/api'
-import HomeworkUpload from './HomeworkUpload.vue';
 
 const route = useRoute()
 const homeworkStore = useHomeworkStore()

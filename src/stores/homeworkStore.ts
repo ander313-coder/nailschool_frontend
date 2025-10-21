@@ -65,25 +65,18 @@ export const useHomeworkStore = defineStore('homework', () => {
 
     try {
       console.log('📤 Запрос ДЗ с фильтрами:', filters)
-      console.log(
-        '🔐 Токен в заголовках:',
-        apiClient.defaults.headers.common['Authorization'] ? 'есть' : 'нет',
-      )
 
       const response = await apiClient.get('/homework/', {
         params: filters,
-        // Добавим отладку запроса
-        transformRequest: [
-          (data, headers) => {
-            console.log('📦 Отправляемые данные:', data)
-            console.log('📦 Заголовки:', headers)
-            return data
-          },
-        ],
       })
 
-      homeworkList.value = response.data
-      console.log('✅ Получено ДЗ:', response.data.length)
+      // СОРТИРОВКА ПО ОБНОВЛЕНИЮ (самые новые сверху)
+      homeworkList.value = response.data.sort(
+        (a: { updated_at: string | number | Date }, b: { updated_at: string | number | Date }) =>
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+      )
+
+      console.log('✅ Получено ДЗ:', homeworkList.value.length, '(отсортировано по updated_at)')
       return homeworkList.value
     } catch (err: any) {
       console.error('❌ Ошибка загрузки ДЗ:', err)

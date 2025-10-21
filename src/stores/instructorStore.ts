@@ -77,9 +77,13 @@ export const useInstructorStore = defineStore('instructor', () => {
       console.log('🔄 Загружаем все ДЗ...')
 
       const homeworks = await instructorService.getAllHomeworks(filters)
-      allHomeworks.value = Array.isArray(homeworks) ? homeworks : []
 
-      console.log(`✅ Загружено ${allHomeworks.value.length} ДЗ`)
+      // СОРТИРОВКА ПО ОБНОВЛЕНИЮ (самые новые сверху)
+      allHomeworks.value = (Array.isArray(homeworks) ? homeworks : []).sort(
+        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+      )
+
+      console.log(`✅ Загружено ${allHomeworks.value.length} ДЗ (отсортировано по updated_at)`)
     } catch (err: any) {
       error.value = err.message || 'Ошибка при загрузке ДЗ'
       console.error('❌ Ошибка загрузки ДЗ:', err)
