@@ -15,6 +15,19 @@ export const testService = {
     }
   },
 
+  // Получить ВСЕ результаты тестов пользователя
+  async getUserTestResults(): Promise<TestResult[]> {
+    try {
+      console.log('🚀 Fetching all user test results...')
+      const response = await apiClient.get('/user/test-results/')
+      console.log('✅ User test results response:', response.data)
+      return response.data.results || []
+    } catch (error) {
+      console.error('❌ Error fetching user test results:', error)
+      throw error
+    }
+  },
+
   // Отправить ответы на тест
   async submitTest(submission: TestSubmission): Promise<TestResult> {
     console.log('🚀 Submitting test data:', JSON.stringify(submission, null, 2))

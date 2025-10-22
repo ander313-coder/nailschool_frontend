@@ -98,7 +98,27 @@
             Вернуться к курсу
           </button>
         </div>
-
+        <!-- Информационные сообщения -->
+        <div class="lesson-info-messages" v-if="localCompleted">
+          <div v-if="currentLesson?.has_test" class="info-message">
+            <template v-if="testStore.hasPendingTextAnswers(lessonId)">
+              <div class="message pending">
+                ⏳ Ваш тест отправлен на проверку преподавателю. Следующий урок будет доступен после проверки.
+              </div>
+            </template>
+            <template v-else-if="!testStore.isTestPassed(lessonId)">
+              <div class="message failed">
+                ❌ Тест не пройден. Пройдите тест для доступа к следующему уроку.
+                <button @click="goToTest" class="retry-test-btn">Пройти тест</button>
+              </div>
+            </template>
+            <template v-else>
+              <div class="message success">
+                ✅ Тест пройден успешно! Можете переходить к следующему уроку.
+              </div>
+            </template>
+          </div>
+        </div>
         <!-- Чекбокс завершения урока -->
         <div class="completion-checkbox" v-if="!isLoading">
           <label class="checkbox-label">
@@ -142,13 +162,16 @@
             :class="{
               'current': lessonItem.id === lessonId,
               'completed': lessonItem.completed,
-              'locked': !isLessonAccessible(lessonItem)
+              'locked': !isLessonAccessible(lessonItem),
+              'has-pending-test': lessonItem.has_test && testStore.hasPendingTextAnswers(lessonItem.id),
+              'test-failed': lessonItem.has_test && !testStore.isTestPassed(lessonItem.id) && !testStore.hasPendingTextAnswers(lessonItem.id)
             }"
             @click="goToLesson(lessonItem.id)"
           >
             <div class="lesson-item-icon">
               <span v-if="lessonItem.completed" class="completed-icon">✓</span>
               <span v-else-if="lessonItem.id === lessonId" class="current-icon">▶</span>
+              <span v-else-if="!isLessonAccessible(lessonItem)" class="locked-icon">🔒</span>
               <span v-else class="default-icon">●</span>
             </div>
             
@@ -158,9 +181,34 @@
                 <span class="duration">{{ lessonItem.duration_minutes }} мин</span>
                 <span v-if="lessonItem.has_test" class="test-badge">📝 Тест</span>
                 <span v-if="lessonItem.has_homework" class="homework-badge">ДЗ</span>
-                <!-- Показываем подсказку для заблокированных уроков -->
+                
+                <!-- Статус теста -->
+                <span v-if="lessonItem.has_test && lessonItem.completed" class="test-status">
+                  <span v-if="testStore.hasPendingTextAnswers(lessonItem.id)" class="pending-status">
+                    ⏳ На проверке
+                  </span>
+                  <span v-else-if="!testStore.isTestPassed(lessonItem.id)" class="failed-status">
+                    ❌ Тест не пройден
+                  </span>
+                  <span v-else class="passed-status">
+                    ✅ Тест пройден
+                  </span>
+                </span>
+                
+                <!-- Подсказка для заблокированных уроков -->
                 <span v-if="!isLessonAccessible(lessonItem) && lessonItem.id !== lessonId" class="locked-hint">
-                  🔒 Завершите текущий урок
+                  <template v-if="!localCompleted && lessonItem.order === currentLessonIndex + 2">
+                    🔒 Завершите текущий урок
+                  </template>
+                  <template v-else-if="testStore.hasPendingTextAnswers(lessonId) && lessonItem.order === currentLessonIndex + 2">
+                    🔒 Ожидайте проверки теста
+                  </template>
+                  <template v-else-if="!testStore.isTestPassed(lessonId) && lessonItem.order === currentLessonIndex + 2">
+                    🔒 Пройдите тест
+                  </template>
+                  <template v-else>
+                    🔒 Сначала завершите предыдущие уроки
+                  </template>
                 </span>
               </div>
             </div>
@@ -209,10 +257,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCourseDetailStore } from '@/stores/courseDetail';
 import HomeworkComponent from '@/components/HomeworkComponent.vue'; 
 import TestModal from '@/components/TestModal.vue';
+import { useTestStore } from '@/stores/testStore'
 
 const route = useRoute();
 const router = useRouter();
 const courseDetailStore = useCourseDetailStore();
+const testStore = useTestStore()
 
 const videoPlayer = ref<HTMLVideoElement | null>(null);
 const lessonId = computed(() => Number(route.params.lessonId));
@@ -228,28 +278,24 @@ const progress = computed(() => courseDetailStore.progress);
 const localCompleted = ref(false);
 const isLoadingCompletion = ref(false);
 
-// Загрузка данных урока 
+// Загрузка данных урока + результатов тестов
 const loadLessonData = async () => {
   try {
     await Promise.all([
       courseDetailStore.fetchLessonDetail(lessonId.value),
-      courseDetailStore.fetchCourseDetail(courseId.value)
+      courseDetailStore.fetchCourseDetail(courseId.value),
+      testStore.fetchUserTestResults() // ← ДОБАВИЛИ ЗАГРУЗКУ РЕЗУЛЬТАТОВ ТЕСТОВ
     ]);
     
-    // Инициализируем состояние чекбокса после загрузки данных
     if (lessonDetail.value) {
       localCompleted.value = lessonDetail.value.is_completed === true;
       console.log('🎯 Чекбокс инициализирован:', localCompleted.value);
     }
+
+    console.log('📊 Результаты тестов загружены:', testStore.allTestResults.length);
   } catch (error) {
     console.error('Error loading lesson data:', error);
   }
-  console.log('🔍 Проверка синхронизации:', {
-    localCompleted: localCompleted.value,
-    lessonCompleted: lessonDetail.value?.is_completed,
-    lessonsCount: lessons.value.length,
-    completedLessons: lessons.value.filter(l => l.completed).length
-  });
 };
 
 // Инициализация при загрузке компонента
@@ -317,7 +363,7 @@ const toggleCompletion = async (isAutoComplete = false) => {
 };
 
 // Обработчик клика по чекбоксу (только ручное переключение)
-const handleCheckboxChange = (event: Event) => {
+const handleCheckboxChange = () => {
   console.log('✏️ Ручное переключение чекбокса');
   toggleCompletion(false);
 };
@@ -357,32 +403,65 @@ const lesson = computed(() =>
 );
 
 // Навигация
-// Проверка доступности урока для перехода
+// проверка доступности уроков
 const isLessonAccessible = (lessonItem: any) => {
   // Текущий урок всегда доступен
-  if (lessonItem.id === lessonId.value) {
-    return true;
-  }
-  // Завершенные уроки доступны
-  if (lessonItem.completed) {
-    return true;
-  }
+  if (lessonItem.id === lessonId.value) return true;
   
-  // Находим индекс текущего и целевого урока
+  // Завершенные уроки доступны
+  if (lessonItem.completed) return true;
+  
+  // Находим индексы
   const currentIndex = lessons.value.findIndex(l => l.id === lessonId.value);
   const targetIndex = lessons.value.findIndex(l => l.id === lessonItem.id);
   
-  // Если целевой урок раньше текущего - доступен
-  if (targetIndex < currentIndex) {
+  // Уроки до текущего доступны
+  if (targetIndex < currentIndex) return true;
+  
+  // Следующий урок доступен только если выполнены все условия:
+  if (targetIndex === currentIndex + 1) {
+    const currentLesson = lessons.value[currentIndex];
+    const hasTest = currentLesson.has_test;
+    
+    // 1. Текущий урок должен быть завершен
+    if (!localCompleted.value) {
+      console.log(`🚫 Урок ${lessonItem.id} заблокирован: текущий урок не завершен`);
+      return false;
+    }
+    
+    // 2. Если есть тест - он должен быть пройден и не иметь ожидающих проверки ответов
+    if (hasTest) {
+      const isTestPassed = testStore.isTestPassed(currentLesson.id);
+      const hasPendingAnswers = testStore.hasPendingTextAnswers(currentLesson.id);
+      const testResult = testStore.getTestResultForLesson(currentLesson.id);
+      
+      console.log(`📊 Проверка теста для урока ${currentLesson.id}:`, {
+        isTestPassed,
+        hasPendingAnswers,
+        testResult
+      });
+      
+      if (hasPendingAnswers) {
+        console.log(`🚫 Урок ${lessonItem.id} заблокирован: текстовые ответы на проверке`);
+        return false;
+      }
+      
+      if (!isTestPassed) {
+        console.log(`🚫 Урок ${lessonItem.id} заблокирован: тест не пройден`);
+        return false;
+      }
+      
+      console.log(`✅ Урок ${lessonItem.id} доступен: тест пройден`);
+      return true;
+    }
+    
+    // 3. Нет теста - можно переходить
+    console.log(`✅ Урок ${lessonItem.id} доступен: теста нет`);
     return true;
   }
   
-  // Если целевой урок следующий после текущего - доступен только если текущий завершен
-  if (targetIndex === currentIndex + 1) {
-    return localCompleted.value === true;
-  }
-  
   // Все остальные уроки недоступны
+  console.log(`🚫 Урок ${lessonItem.id} заблокирован: не следующий по порядку`);
   return false;
 };
 
@@ -416,9 +495,39 @@ const realTestId = computed(() => {
 const showTestModal = ref(false);
 const currentTestId = ref<number | null>(null);
 
-// проверка доступности следующего урока
+// Проверка доступности следующего урока
 const canProceedToNextLesson = computed(() => {
-  return localCompleted.value === true;
+  if (!hasNextLesson.value) return false;
+  
+  // 1. Текущий урок должен быть завершен
+  if (!localCompleted.value) {
+    console.log('🚫 Следующий урок заблокирован: текущий урок не завершен');
+    return false;
+  }
+  
+  const currentLesson = lessons.value[currentLessonIndex.value];
+  
+  // 2. Если есть тест - он должен быть пройден
+  if (currentLesson.has_test) {
+    const isTestPassed = testStore.isTestPassed(currentLesson.id);
+    const hasPendingAnswers = testStore.hasPendingTextAnswers(currentLesson.id);
+    
+    if (hasPendingAnswers) {
+      console.log('🚫 Следующий урок заблокирован: текстовые ответы на проверке');
+      return false;
+    }
+    
+    if (!isTestPassed) {
+      console.log('🚫 Следующий урок заблокирован: тест не пройден');
+      return false;
+    }
+    
+    console.log('✅ Следующий урок доступен: тест пройден');
+    return true;
+  }
+  
+  console.log('✅ Следующий урок доступен: теста нет');
+  return true;
 });
 
 const goToTest = () => {
@@ -446,6 +555,10 @@ const retryLoading = () => {
 const showHomework = computed(() => {
   return lessonDetail.value?.has_homework || false;
 });
+
+const currentLesson = computed(() => 
+  lessons.value.find(l => l.id === lessonId.value)
+);
 </script>
 
 <style scoped>
@@ -645,35 +758,55 @@ const showHomework = computed(() => {
   border-color: #e6f3ff;
 }
 
-/* Подсказка для заблокированных уроков */
-.locked-hint {
-  font-size: 0.7rem;
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.1);
+/* Стили для статусов тестов */
+.test-status {
+  font-size: 12px;
   padding: 2px 6px;
   border-radius: 4px;
-  margin-left: 0.5rem;
+  margin-left: 8px;
 }
 
+.pending-status {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.failed-status {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.passed-status {
+  background-color: #d1edff;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+/* Стили для заблокированных уроков */
 .lesson-item.locked {
   opacity: 0.6;
   cursor: not-allowed;
-  background: #f8f9fa !important;
-  border-color: #e9ecef !important;
-}
-
-.lesson-item.locked:hover {
-  transform: none !important;
-  box-shadow: none !important;
-  background: #f8f9fa !important;
 }
 
 .lesson-item.locked .lesson-title {
-  color: #666;
+  color: #6c757d;
 }
 
-.lesson-item.locked .lesson-meta {
-  color: #999;
+.lesson-item.has-pending-test {
+  border-left: 3px solid #ffc107;
+}
+
+.lesson-item.test-failed {
+  border-left: 3px solid #dc3545;
+}
+
+.locked-hint {
+  font-size: 11px;
+  color: #6c757d;
+  margin-left: 8px;
+  font-style: italic;
 }
 
 /* Иконки и статусы */
@@ -786,7 +919,43 @@ const showHomework = computed(() => {
   opacity: 0.9;
   transform: translateY(-1px);
 }
+.lesson-info-messages {
+  margin: 20px 0;
+}
 
+.info-message {
+  padding: 12px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.message.pending {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
+.message.failed {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+.message.success {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.retry-test-btn {
+  margin-left: 10px;
+  padding: 4px 8px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
 /* Стили для заблокированных кнопок */
 .nav-button:disabled,
 .nav-button.disabled {

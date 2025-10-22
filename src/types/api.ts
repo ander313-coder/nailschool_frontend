@@ -137,13 +137,19 @@ export interface TestSubmission {
 }
 
 export interface TestResult {
+  id: number
+  test_id: number
+  lesson?: {
+    id: number
+    title: string
+    course_title: string
+    course_id: number
+  }
   score: number
-  passed: boolean
-  correct_answers?: number
-  correctAnswers?: number
-  total_questions?: number
-  totalQuestions?: number
-  wrong_answers?: number
+  is_passed: boolean
+  text_answers_pending: boolean
+  completed_at?: string
+  started_at?: string
   details?: any
 }
 // Типы для домашних заданий
