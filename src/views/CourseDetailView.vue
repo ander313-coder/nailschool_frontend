@@ -158,10 +158,12 @@ import { computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCourseDetailStore } from '@/stores/courseDetail';
 import { storeToRefs } from 'pinia';
+import { useTestStore } from '@/stores/testStore'
 
 const route = useRoute();
 const router = useRouter();
 const courseDetailStore = useCourseDetailStore();
+const testStore = useTestStore()
 
 const { course, lessons, progress, isLoading, error } = storeToRefs(courseDetailStore);
 
@@ -191,9 +193,18 @@ watch(
   }
 );
 
-const loadCourseData = () => {
+const loadCourseData = async () => {
   if (courseId.value) {
-    courseDetailStore.fetchCourseDetail(courseId.value);
+    try {
+      // Загружаем курс и результаты тестов параллельно
+      await Promise.all([
+        courseDetailStore.fetchCourseDetail(courseId.value),
+        testStore.fetchUserTestResults()
+      ]);
+      console.log('✅ Данные курса и результаты тестов загружены');
+    } catch (error) {
+      console.error('❌ Ошибка загрузки данных:', error);
+    }
   }
 };
 
@@ -232,15 +243,21 @@ const sortedLessons = computed(() => {
 const nextLesson = computed(() => {
   const lessonList = sortedLessons.value;
   if (!lessonList || lessonList.length === 0) return null;
+  
+  // Находим первый незавершенный доступный урок
   let next = lessonList.find(lesson => {
-    return !lesson.completed && lesson.is_unlocked !== false;
+    return !lesson.completed && isLessonAccessible(lesson);
   });
+  
+  // Если не нашли доступный, ищем любой незавершенный для информации
   if (!next) {
     next = lessonList.find(lesson => !lesson.completed);
   }
+  
   if (!next) {
     return null;
   }
+  
   return next;
 });
 
@@ -261,12 +278,13 @@ const continueLearning = () => {
   }
 };
 
-// Проверка доступности урока
+// проверка доступности уроков
 const isLessonAccessible = (lessonItem: any) => {
   // Первый урок всегда доступен
   if (isFirstLesson(lessonItem)) {
     return true;
   }
+  
   // Завершенные уроки доступны
   if (lessonItem.completed) {
     return true;
@@ -282,12 +300,45 @@ const isLessonAccessible = (lessonItem: any) => {
     return true;
   }
   
-  // Если целевой урок следующий после последнего завершенного - доступен
+  // Если целевой урок следующий после последнего завершенного - проверяем тесты
   if (targetIndex === currentIndex) {
+    // Находим предыдущий урок (который должен быть завершен)
+    const prevLesson = sorted[targetIndex - 1];
+    
+    if (!prevLesson) return true; // Нет предыдущего урока
+    
+    // Если предыдущий урок завершен И имеет тест - проверяем тест
+    if (prevLesson.completed && prevLesson.has_test) {
+      const isTestPassed = testStore.isTestPassed(prevLesson.id);
+      const hasPendingAnswers = testStore.hasPendingTextAnswers(prevLesson.id);
+      
+      console.log(`📊 Проверка теста для перехода к уроку ${lessonItem.id}:`, {
+        prevLesson: prevLesson.title,
+        hasTest: prevLesson.has_test,
+        isTestPassed,
+        hasPendingAnswers
+      });
+      
+      if (hasPendingAnswers) {
+        console.log(`🚫 Урок ${lessonItem.id} заблокирован: текстовые ответы на проверке`);
+        return false;
+      }
+      
+      if (!isTestPassed) {
+        console.log(`🚫 Урок ${lessonItem.id} заблокирован: тест не пройден`);
+        return false;
+      }
+      
+      console.log(`✅ Урок ${lessonItem.id} доступен: тест пройден`);
+      return true;
+    }
+    
+    // Нет теста или предыдущий урок не завершен - можно переходить
     return true;
   }
   
   // Все остальные уроки недоступны
+  console.log(`🚫 Урок ${lessonItem.id} заблокирован: не следующий по порядку`);
   return false;
 };
 </script>
