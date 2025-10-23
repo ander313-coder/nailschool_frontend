@@ -157,41 +157,46 @@
           <!-- Форма проверки -->
           <div class="review-form">
             <h3>Оценка ответа</h3>
-            
-            <div class="score-section">
-              <label>Оценка:</label>
-              <div class="score-options">
-                <button
-                  @click="reviewData.is_approved = true"
-                  :class="['score-btn', { active: reviewData.is_approved }]"
+            <!-- ТОЛЬКО ввод баллов -->
+            <div class="score-input">
+              <label>Баллы (0-{{ selectedAnswer.question?.points || 0 }}):</label>
+              <div class="score-controls">
+                <input
+                  type="number"
+                  v-model.number="reviewData.score"
+                  :max="selectedAnswer.question?.points || 0"
+                  min="0"
+                  class="score-field"
+                  placeholder="Введите баллы"
                 >
-                  ✅ Принять
-                </button>
-                <button
-                  @click="reviewData.is_approved = false"
-                  :class="['score-btn', { active: !reviewData.is_approved }]"
-                >
-                  ❌ Отклонить
-                </button>
+                <div class="score-hint">
+                  Максимум: {{ selectedAnswer.question?.points || 0 }} баллов
+                </div>
+              </div>
+              
+              <!-- Визуальная подсказка о проходном балле -->
+              <div v-if="selectedAnswer.question" class="passing-hint">
+                <!-- 🔥 РАСЧЕТ ОБЩЕГО ПРОХОДНОГО БАЛЛА -->
+                <div v-if="calculatePassingInfo(selectedAnswer).isCalculated">
+                  <span v-if="calculatePassingInfo(selectedAnswer).willPass" class="hint-success">
+                    ✅ Студент сдаст тест с этой оценкой
+                  </span>
+                  <span v-else class="hint-warning">
+                    ⚠️ Для сдачи теста нужно ещё 
+                    {{ calculatePassingInfo(selectedAnswer).neededPoints }} баллов
+                  </span>
+                </div>
+                <span v-else class="hint-info">
+                  ℹ️ Система определит результат теста автоматически
+                </span>
               </div>
             </div>
 
-            <div class="score-input">
-              <label>Баллы (0-{{ selectedAnswer.question?.points || 0 }}):</label>
-              <input
-                type="number"
-                v-model.number="reviewData.score"
-                :max="selectedAnswer.question?.points || 0"
-                min="0"
-                class="score-field"
-              >
-            </div>
-
             <div class="feedback-section">
-              <label>Комментарий:</label>
+              <label>Комментарий для студента (опционально):</label>
               <textarea
                 v-model="reviewData.feedback"
-                placeholder="Обратная связь для студента..."
+                placeholder="Объясните оценку или дайте рекомендации..."
                 rows="3"
                 class="feedback-field"
               ></textarea>
@@ -201,7 +206,7 @@
 
         <div class="modal-actions">
           <button 
-            @click="submitReview" 
+            @click="submitReview"
             :disabled="isSubmitting || reviewData.score < 0 || reviewData.score > (selectedAnswer.question?.points || 0)"
             class="primary-btn"
           >
@@ -216,11 +221,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { useInstructorStore } from '../../stores/instructorStore'
-import type { TextAnswer, TextAnswerReviewData } from '../../types/api'
+import type { TextAnswer } from '../../types/api'
 
-const router = useRouter()
 const instructorStore = useInstructorStore()
 
 // Состояния
@@ -233,8 +236,7 @@ const viewMode = ref<'pending' | 'all' | 'student'>('pending')
 const selectedStudentId = ref<number | ''>('')
 
 // Данные формы
-const reviewData = ref<TextAnswerReviewData>({
-  is_approved: true,
+const reviewData = ref({
   score: 0,
   feedback: ''
 })
@@ -358,8 +360,8 @@ const onStudentChange = () => {
 // Открытие модального окна с защитой
 const openReview = (answer: TextAnswer) => {
   selectedAnswer.value = answer
+  // Автоматически ставим максимальный балл как начальное значение
   reviewData.value = {
-    is_approved: true,
     score: answer.question?.points || 0,
     feedback: ''
   }
@@ -369,21 +371,32 @@ const openReview = (answer: TextAnswer) => {
 const closeModal = () => {
   selectedAnswer.value = null
   reviewData.value = {
-    is_approved: true,
     score: 0,
     feedback: ''
   }
 }
 
-// Отправка оценки с защитой
+// Отправка оценки 
 const submitReview = async () => {
   if (!selectedAnswer.value) return
 
   try {
     isSubmitting.value = true
-    await instructorStore.reviewTextAnswer(selectedAnswer.value.id, reviewData.value)
+    
+    // 🔥 ВАЖНОЕ ИСПРАВЛЕНИЕ: ВСЕГДА ставим is_approved = true
+    // Пусть система сама определяет прохождение теста по общему баллу
+    const reviewPayload = {
+      is_approved: true, // 🔥 ВСЕГДА true - статус определяется системой
+      score: reviewData.value.score,
+      feedback: reviewData.value.feedback
+    }
+    
+    console.log('📝 Отправка оценки:', reviewPayload)
+    await instructorStore.reviewTextAnswer(selectedAnswer.value.id, reviewPayload)
+    
     closeModal()
-    await loadData()
+    await loadData() // Перезагружаем список
+    
   } catch (err: any) {
     error.value = err.message || 'Ошибка сохранения оценки'
     console.error('❌ Ошибка сохранения:', err)
@@ -414,14 +427,56 @@ const getAnswerScore = (answer: TextAnswer): number => {
   return answer.score || 0
 }
 
+// 🔥 НОВЫЙ МЕТОД: Расчет информации о проходном балле
+const calculatePassingInfo = (answer: TextAnswer) => {
+  if (!answer.test || !answer.question) {
+    return { isCalculated: false }
+  }
+
+  try {
+    const passingThreshold = 80; // Проходной балл теста
+    
+    // Упрощенный расчет (можно улучшить когда будет доступ к TestResult)
+    const maxPointsForThisQuestion = answer.question.points;
+    const currentScore = reviewData.value.score;
+    
+    // Предполагаем, что студент получил максимум за автоматическую часть
+    const autoScore = 50; // Максимум за автоматические вопросы
+    
+    // Расчет общего балла
+    const textScorePercent = (currentScore / maxPointsForThisQuestion) * 50; // 50% за текстовую часть
+    const totalScore = autoScore + textScorePercent;
+    
+    const willPass = totalScore >= passingThreshold;
+    const neededPoints = willPass ? 0 : Math.ceil((passingThreshold - autoScore) / 50 * maxPointsForThisQuestion);
+    
+    return {
+      isCalculated: true,
+      willPass,
+      neededPoints,
+      totalScore: Math.round(totalScore),
+      autoScore,
+      textScorePercent: Math.round(textScorePercent)
+    }
+    
+  } catch (error) {
+    console.error('Ошибка расчета проходного балла:', error)
+    return { isCalculated: false }
+  }
+}
+
 const getStatusText = (answer: TextAnswer): string => {
   if (answer.requires_review) return 'На проверке'
-  return isAnswerApproved(answer) ? 'Принято' : 'Отклонено'
+  
+  // Просто показываем оценку, система сама определит прохождение теста
+  const maxPoints = answer.question?.points || 0
+  const studentScore = answer.score || 0
+  return `📝 ${studentScore}/${maxPoints}`
 }
 
 const getStatusClass = (answer: TextAnswer): string => {
   if (answer.requires_review) return 'pending'
-  return isAnswerApproved(answer) ? 'approved' : 'rejected'
+  return 'reviewed' // Все проверенные ответы одного цвета
 }
 
 // Наблюдатели
@@ -646,29 +701,6 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-badge.pending {
-  background: #fff3e0;
-  color: #f57c00;
-}
-
-.status-badge.approved {
-  background: #e8f5e8;
-  color: #2e7d32;
-}
-
-.status-badge.rejected {
-  background: #ffebee;
-  color: #c62828;
-}
-
 .answer-preview {
   margin: 16px 0;
 }
@@ -801,25 +833,58 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.score-options {
+/* Стили для формы проверки */
+.score-controls {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.score-field {
+  padding: 12px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  width: 100%;
+  max-width: 200px;
+}
+
+.score-field:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+
+.score-hint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.passing-hint {
   margin-top: 8px;
-}
-
-.score-btn {
-  flex: 1;
-  padding: 12px 16px;
-  border: 2px solid #e9ecef;
+  padding: 8px;
   border-radius: 6px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s;
+  font-size: 14px;
 }
 
-.score-btn.active {
-  border-color: #8C4CC3;
-  background: #f3f0ff;
+.hint-success {
+  color: #059669;
+  background: #ecfdf5;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.hint-warning {
+  color: #d97706;
+  background: #fffbeb;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.hint-error {
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 .score-field {
@@ -843,6 +908,33 @@ onMounted(() => {
 .feedback-field:focus {
   outline: none;
   border-color: #8C4CC3;
+}
+
+/* Обновляем стили статусов */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-badge.reviewed {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.hint-info {
+  color: #374151;
+  background: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
 /* Кнопки действий */
