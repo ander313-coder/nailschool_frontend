@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import apiClient from '@/api/client'
-import type { Homework } from '@/types/api'
 
 export interface Notification {
   id: number
@@ -9,6 +8,7 @@ export interface Notification {
   title: string
   message: string
   homework_id: number | null
+  test_id: number | null
   lesson_title: string
   read: boolean
   created_at: string
