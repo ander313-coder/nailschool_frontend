@@ -116,6 +116,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useRouter } from 'vue-router';
 import type { Notification } from '@/stores/notificationStore';
+import apiClient from '@/api/client';
 
 const notificationStore = useNotificationStore();
 const router = useRouter();
@@ -167,11 +168,22 @@ const handleNotificationClick = async (notification: Notification) => {
     // Уведомления о ДЗ - переходим к списку ДЗ
     router.push('/homeworks');
   } else if (notification.type === 'TEST_SUBMITTED') {
-    // 🔥 ДЛЯ ПРЕПОДАВАТЕЛЯ: переходим к проверке конкретного теста
-    router.push(`/instructor/text-answers`);
+    // 🔥 ДЛЯ ПРЕПОДАВАТЕЛЯ: переходим к проверке тестов
+    router.push('/instructor/text-answers');
+  } else if (notification.type === 'TEST_REVIEWED' && notification.lesson_id) {
+    // 🔥 ДЛЯ СТУДЕНТА: переходим прямо к уроку
+    // Нужно получить course_id для урока
+    try {
+      const response = await apiClient.get(`/lessons/${notification.lesson_id}/course/`);
+      const courseId = response.data.course_id;
+      router.push(`/courses/${courseId}/lesson/${notification.lesson_id}`);
+    } catch (error) {
+      console.warn('⚠️ Не удалось получить курс для урока, переходим к курсам:', error);
+      router.push('/courses');
+    }
   } else if (notification.type === 'TEST_REVIEWED') {
-    // 🔥 ДЛЯ СТУДЕНТА: переходим к уроку с этим тестом
-    router.push(`/my-courses/`);
+    // Резервный вариант если нет lesson_id
+    router.push('/courses');
   } else {
     // Общие уведомления - переходим на главную
     router.push('/');

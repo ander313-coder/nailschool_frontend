@@ -77,7 +77,7 @@
             Пройти тест
           </button>
           
-          <!-- заблокирована пока чекбокс не отмечен -->
+          <!-- 🔥 ИСПРАВЛЯЕМ: Разные условия для разных кнопок -->
           <button 
             v-if="hasNextLesson" 
             @click="goToNextLesson"
@@ -92,8 +92,8 @@
             v-else 
             @click="goToCourse"
             class="nav-button course"
-            :disabled="!canProceedToNextLesson"
-            :class="{ 'disabled': !canProceedToNextLesson }"
+            :disabled="!canReturnToCourse"
+            :class="{ 'disabled': !canReturnToCourse }"
           >
             Вернуться к курсу
           </button>
@@ -109,7 +109,6 @@
             <template v-else-if="!testStore.isTestPassed(lessonId)">
               <div class="message failed">
                 ❌ Тест не пройден. Пройдите тест для доступа к следующему уроку.
-                <button @click="goToTest" class="retry-test-btn">Пройти тест</button>
               </div>
             </template>
             <template v-else>
@@ -495,7 +494,6 @@ const realTestId = computed(() => {
 const showTestModal = ref(false);
 const currentTestId = ref<number | null>(null);
 
-// Проверка доступности следующего урока
 const canProceedToNextLesson = computed(() => {
   if (!hasNextLesson.value) return false;
   
@@ -527,6 +525,16 @@ const canProceedToNextLesson = computed(() => {
   }
   
   console.log('✅ Следующий урок доступен: теста нет');
+  return true;
+});
+
+// 🔥 НОВОЕ СВОЙСТВО: Проверка доступности кнопки "Вернуться к курсу"
+const canReturnToCourse = computed(() => {
+  // Кнопка "Вернуться к курсу" должна быть ВСЕГДА активна когда нет следующего урока
+  // Не зависимо от статуса теста текущего урока
+  if (hasNextLesson.value) return false; // Это не последний урок
+  
+  console.log('✅ Кнопка "Вернуться к курсу" доступна: это последний урок');
   return true;
 });
 

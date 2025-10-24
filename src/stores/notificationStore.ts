@@ -9,6 +9,7 @@ export interface Notification {
   message: string
   homework_id: number | null
   test_id: number | null
+  lesson_id: number | null
   lesson_title: string
   read: boolean
   created_at: string
